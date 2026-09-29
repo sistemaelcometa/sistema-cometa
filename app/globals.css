@@ -877,13 +877,15 @@ textarea {
 }
 
 .module-grid {
-  grid-template-columns: repeat(3, minmax(180px, 260px));
+  grid-template-columns: repeat(3, minmax(260px, 460px));
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .module-image-card {
   aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: 460px;
 }
 
 .metric-value-row {
