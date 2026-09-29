@@ -696,10 +696,12 @@ Los equivalentes criticos aca son:
 
 ## Proximo Paso
 
-Antes de modificar `supabase/migrations`, revisar este contrato y cerrar:
+El contrato ya se bajo a una primera migracion limpia en `supabase/migrations/001_initial_rentals_schema.sql`.
 
-1. Nombres definitivos de tablas: prefijo `urban_`/`pde_` vs nombres generales con columna `area`.
-2. Si habra una sola organizacion fija o soporte multi-organizacion real.
-3. Si las liquidaciones familiares se corrigen creando version nueva o editando snapshot con historial.
-4. Si la carga de archivo se hace antes o despues de crear la operacion principal.
-5. Que reportes deben estar disponibles en la primera version conectada a Supabase.
+Siguientes pasos tecnicos:
+
+1. Validar la migracion contra un proyecto Supabase/local PostgreSQL.
+2. Ajustar cualquier detalle de sintaxis o permisos detectado por Supabase.
+3. Crear RPCs transaccionales de prioridad alta.
+4. Conectar las primeras lecturas paginadas desde el frontend.
+5. Recien despues conectar formularios de escritura y carga de archivos.
