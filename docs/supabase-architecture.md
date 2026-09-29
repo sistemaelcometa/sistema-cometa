@@ -17,11 +17,117 @@ Este documento define el contrato inicial de datos para migrar el sistema a Supa
 - Habra un usuario admin principal.
 - Los usuarios se registran con email y quedan sin permisos hasta que el admin los habilite.
 - El uso normal sera de un usuario, pero el modelo queda preparado para varios usuarios concurrentes.
+- Se conserva estructura de organizacion unica: multiempresa real no se implementa ahora, pero todas las tablas operativas mantienen `organization_id` para RLS y permisos.
 - Punta del Este es una seccion separada de Alquileres Urbanos.
 - Los departamentos PDE `209` y `601` no pertenecen al modelo de edificios urbanos.
 - No se borran datos criticos fisicamente como regla general: se archivan, cancelan o anulan.
 - Los comprobantes, contratos y documentos se guardan como archivos reales en Supabase Storage.
 - La liquidacion familiar se cierra congelada, con snapshot, y puede corregirse/editase luego con auditoria.
+- Las liquidaciones familiares corregidas se versionan: no se pisa el snapshot original.
+- Los importes se guardan como `numeric`, nunca como float.
+- Las fechas puras de negocio usan `date`; los instantes reales usan `timestamptz`.
+- La zona horaria operativa es `America/Argentina/Buenos_Aires`.
+
+## Decisiones Arquitectonicas Cerradas
+
+### Organizacion
+
+El sistema nace para una sola administracion/familia, pero mantiene `organizations` y `organization_members`.
+
+- La organizacion inicial sera `El Cometa`.
+- No se implementa multiempresa en UI ni flujos de negocio por ahora.
+- Todas las tablas de negocio tendran `organization_id`.
+- RLS se define desde el inicio por organizacion y membresia activa.
+- Esta decision evita reescribir seguridad cuando haya mas usuarios.
+
+### Estados Almacenados Vs Calculados
+
+Criterio:
+
+- Almacenar estados cuando representan una decision humana, simplifican una operacion critica, necesitan historial o deben congelarse.
+- Calcular valores cuando salen directamente de cargos, pagos, fechas o asignaciones confirmadas.
+
+Estados almacenados con actualizacion controlada por RPC:
+
+- `urban_units.status`
+- `urban_charges.status`
+- `urban_leases.status`
+- `pde_reservations.status`
+- `family_settlements.status`
+- `files.status`
+
+Valores derivados que no deben ser enviados por el frontend como autoridad:
+
+- saldo urbano.
+- saldo PDE.
+- total de cargo urbano.
+- estado final de cargo luego de un cobro.
+- estado final de reserva PDE luego de un cobro/anulacion.
+- valor por noche PDE.
+- margenes y totales de reportes.
+
+### Liquidaciones Familiares Corregidas
+
+Las correcciones crean una nueva version vigente.
+
+- `family_settlements.version` indica la version.
+- `family_settlements.corrects_settlement_id` apunta a la version corregida.
+- `family_settlements.is_current` indica cual se consulta por defecto.
+- La version anterior pasa a estado `corrected`.
+- La nueva version queda `closed` e `is_current = true`.
+- El motivo y usuario de la correccion quedan auditados.
+
+### Carga De Archivos
+
+La operacion de negocio no debe depender de que el archivo suba correctamente.
+
+Flujo recomendado:
+
+1. Crear/confirmar la operacion de negocio.
+2. Subir archivo a Storage.
+3. Crear `files`.
+4. Crear `file_links`.
+
+Si falla la subida:
+
+- La operacion queda confirmada sin comprobante.
+- El comprobante se puede cargar despues.
+
+Si se sube el archivo pero falla el vinculo:
+
+- El archivo queda `pending_link`.
+- Se puede reintentar el vinculo o marcar `orphaned`.
+- Un proceso administrativo puede limpiar archivos huerfanos.
+
+Estados sugeridos para `files`:
+
+- `pending_link`
+- `active`
+- `archived`
+- `orphaned`
+
+### Monedas Y Periodos
+
+Monedas iniciales:
+
+- `ARS`
+- `USD`
+
+Reglas:
+
+- Urbanos puede operar en ARS o USD segun contrato/cargo.
+- Expensas urbanas arrancan en ARS.
+- PDE arranca en USD por defecto.
+- No hay conversion automatica en la primera etapa.
+- Si una liquidacion futura requiere conversion, se guarda snapshot de `exchange_rate`, `exchange_rate_date` y `exchange_rate_source`.
+
+Tipos:
+
+- Importes: `numeric(14,2)` o `numeric(16,2)` segun tabla.
+- Periodo mensual de expensas: `period_month date`, siempre dia 1.
+- Liquidaciones: `period_start date` y `period_end date`.
+- Fechas de ingreso/egreso y vencimientos: `date`.
+- Creacion, actualizacion y auditoria: `timestamptz`.
 
 ## Modulos
 
@@ -231,8 +337,13 @@ Regla: la interfaz puede ocultar botones, pero la seguridad real vive en RLS y R
 
 `audit_logs`
 - Guarda operaciones importantes.
-- Campos: usuario, accion, entidad, entidad_id, valores antes/despues relevantes, fecha, request_id.
+- Campos: usuario ejecutor, accion, entidad afectada, entidad_id, operation_id, valores antes/despues relevantes, fecha, request_id.
 - No se audita todo automaticamente si no aporta valor, pero si toda operacion critica.
+
+`operation_results`
+- Guarda el resultado confirmado de cada operacion idempotente.
+- Campos: organizacion, operation_id, tipo de operacion, hash de entrada, estado, entidad_resultado, payload_resultado, error, usuario ejecutor, fechas.
+- Permite devolver el mismo resultado ante reintentos seguros y rechazar reintentos con datos distintos.
 
 ## Fuente De Verdad
 
@@ -334,6 +445,24 @@ Herramientas:
 - estados `closed/cancelled/voided`.
 - `operation_id` en operaciones con riesgo de retry.
 
+### Restricciones De Solapamiento En PostgreSQL
+
+Las validaciones de solapamiento no deben depender solo del frontend ni solo de una consulta previa dentro de una RPC. PostgreSQL debe tener una restriccion final que impida estados incompatibles aunque dos usuarios operen al mismo tiempo.
+
+Reservas PDE:
+
+- Activar `btree_gist`.
+- Usar exclusion constraint por `unit_id` y rango de fechas.
+- Modelo conceptual: una unidad no puede tener dos reservas activas cuyo rango `daterange(start_date, end_date, '[)')` se superponga.
+- La restriccion debe ignorar reservas canceladas, anuladas o archivadas.
+
+Contratos urbanos:
+
+- Una unidad urbana no puede tener contratos activos/vigentes con periodos superpuestos.
+- La restriccion debe aplicar solo a contratos que tengan efecto real, no a borradores, anulados o archivados.
+
+La RPC igualmente debe validar antes para devolver mensajes claros al usuario, pero la constraint es la garantia final de consistencia.
+
 ## Idempotencia
 
 Agregar `operation_id` en:
@@ -348,6 +477,31 @@ Agregar `operation_id` en:
 - carga de archivos vinculada a operacion critica.
 
 Unique sugerido: `organization_id + operation_id`.
+
+Modelo sugerido: `operation_results`.
+
+Campos clave:
+
+- `organization_id`
+- `operation_id`
+- `operation_type`
+- `request_hash`
+- `status`: `in_progress`, `succeeded`, `failed`
+- `result_entity_type`
+- `result_entity_id`
+- `result_payload`
+- `error_code`
+- `created_by`
+- `created_at`
+- `completed_at`
+
+Reglas:
+
+- Si llega el mismo `operation_id` con el mismo `request_hash`, devolver el resultado ya guardado.
+- Si llega el mismo `operation_id` con otro `request_hash`, rechazar la operacion.
+- Si la operacion esta `in_progress`, bloquear la fila con `select ... for update` o devolver estado pendiente segun corresponda.
+- El resultado se confirma en la misma transaccion que la operacion de negocio.
+- Si la transaccion falla, no debe quedar una operacion marcada como exitosa.
 
 ## Lecturas Desde Supabase
 
@@ -399,6 +553,8 @@ Filtros frecuentes:
 - `pde_expenses(organization_id, expense_date, unit_id, status)`.
 - `files(organization_id, bucket, storage_path)`.
 - `audit_logs(organization_id, occurred_at desc)`.
+- `audit_logs(organization_id, operation_id)`.
+- `operation_results(organization_id, operation_id)` unico.
 
 Agregar indices de busqueda solo sobre campos realmente usados.
 
@@ -461,6 +617,18 @@ Auditar:
 - archivado de edificios/unidades.
 
 No auditar cada lectura ni cada cambio visual.
+
+Cada registro de auditoria debe diferenciar claramente:
+
+- `actor_user_id`: usuario que ejecuto la accion.
+- `entity_type`: tipo de entidad afectada.
+- `entity_id`: identificador de la entidad afectada.
+- `operation_id`: identificador comun de la operacion completa.
+- `action`: alta, modificacion, anulacion, archivo, cierre, correccion, vinculacion de archivo, etc.
+- `old_values` y `new_values`: solo campos relevantes para investigar cambios.
+- `metadata`: contexto adicional no critico.
+
+Una misma operacion puede generar varios registros de auditoria. Por ejemplo, registrar un cobro puede crear el cobro, imputarlo a cargos, cambiar estados derivados y vincular un comprobante, todo agrupado bajo el mismo `operation_id`.
 
 ## Cache Futuro
 
