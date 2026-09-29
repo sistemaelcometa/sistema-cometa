@@ -2,9 +2,10 @@
 -- Base limpia para operar con PostgreSQL como fuente de verdad.
 
 create extension if not exists pgcrypto;
-create extension if not exists unaccent;
 create extension if not exists pg_trgm;
 create extension if not exists btree_gist;
+create schema if not exists extensions;
+create extension if not exists unaccent with schema extensions;
 
 create or replace function immutable_unaccent(value text)
 returns text
@@ -12,7 +13,7 @@ language sql
 immutable
 parallel safe
 as $$
-  select unaccent(value);
+  select extensions.unaccent(value);
 $$;
 
 create type app_role as enum ('owner', 'admin', 'editor', 'viewer');

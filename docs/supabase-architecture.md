@@ -21,6 +21,7 @@ Este documento define el contrato inicial de datos para migrar el sistema a Supa
 - Punta del Este es una seccion separada de Alquileres Urbanos.
 - Los departamentos PDE `209` y `601` no pertenecen al modelo de edificios urbanos.
 - No se borran datos criticos fisicamente como regla general: se archivan, cancelan o anulan.
+- La UI puede mostrar "Eliminar" para `owner/admin`, pero la operacion interna sera archivar/anular con auditoria.
 - Los comprobantes, contratos y documentos se guardan como archivos reales en Supabase Storage.
 - La liquidacion familiar se cierra congelada, con snapshot, y puede corregirse/editase luego con auditoria.
 - Las liquidaciones familiares corregidas se versionan: no se pisa el snapshot original.
