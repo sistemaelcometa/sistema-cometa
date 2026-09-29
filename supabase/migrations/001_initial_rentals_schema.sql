@@ -800,7 +800,7 @@ begin
   where distribution_group_id = target_distribution_group_id;
 
   if total <> 100.0000 then
-    raise exception 'La distribucion familiar debe sumar exactamente 100%%. Suma actual: %%', total;
+    raise exception 'La distribucion familiar debe sumar exactamente 100%%. Suma actual: %', total;
   end if;
 end;
 $$;
