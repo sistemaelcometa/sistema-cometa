@@ -876,6 +876,16 @@ textarea {
   object-fit: cover;
 }
 
+.module-grid {
+  grid-template-columns: repeat(3, minmax(180px, 260px));
+  justify-content: center;
+  gap: 12px;
+}
+
+.module-image-card {
+  aspect-ratio: 16 / 9;
+}
+
 .metric-value-row {
   display: flex;
   align-items: center;
