@@ -166,7 +166,9 @@ button {
 
 .workspace {
   position: relative;
+  width: min(100%, 1540px);
   min-width: 0;
+  margin: 0 auto;
   padding: 28px;
 }
 
@@ -174,9 +176,9 @@ button {
   display: flex;
   align-items: center;
   gap: 14px;
-  width: min(1180px, 100%);
+  width: 100%;
   min-height: 70px;
-  margin: 0 auto 14px;
+  margin: 0 0 14px;
   padding: 8px 14px;
   border: 1px solid #d5dde5;
   border-radius: 10px;
@@ -877,7 +879,7 @@ textarea {
 }
 
 .module-grid {
-  width: min(100%, 1420px);
+  width: min(100%, 1400px);
   margin: 0 auto;
   grid-template-columns: repeat(3, 1fr);
   justify-content: center;
