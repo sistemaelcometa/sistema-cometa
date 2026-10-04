@@ -377,7 +377,10 @@ Incluso estas escrituras deben guardar `organization_id`, `created_by`, timestam
 
 Prioridad alta:
 
-- `invite_or_enable_member`
+- `claim_initial_owner`
+- `request_organization_access`
+- `enable_member`
+- `disable_member`
 - `create_urban_building`
 - `archive_urban_building`
 - `create_urban_unit`
@@ -601,6 +604,31 @@ Paths sugeridos:
 - `org/{organization_id}/settlements/{settlement_id}/{file_id}`
 
 Los archivos privados se acceden con signed URLs generadas por backend/Supabase segun permisos.
+
+La migracion `003_storage_and_access_rpcs.sql` crea estos buckets como privados y restringe `storage.objects` por path:
+
+```text
+org/{organization_id}/...
+```
+
+No se habilita borrado fisico de objetos desde el cliente. Si un comprobante deja de corresponder, se marca `files.status = archived` u `orphaned` segun el caso.
+
+## Acceso Inicial Y Usuarios
+
+RPCs base:
+
+- `claim_initial_owner(organization_id)`: permite que el primer usuario autenticado tome el rol `owner` si todavia no hay miembros activos.
+- `request_organization_access(organization_id)`: crea/actualiza el perfil y deja la membresia en `pending`.
+- `enable_member(organization_id, user_id, role)`: `owner/admin` habilita un usuario y define rol.
+- `disable_member(organization_id, user_id)`: `owner/admin` deshabilita un usuario sin borrarlo.
+- `get_my_memberships()`: devuelve las organizaciones y roles del usuario autenticado.
+
+El alta normal queda asi:
+
+1. Usuario se registra con email.
+2. Usuario pide acceso a `El Cometa`.
+3. Admin/dueño habilita y asigna rol.
+4. El frontend muestra opciones segun rol, pero la seguridad real queda en RLS/RPC.
 
 ## Auditoria
 
