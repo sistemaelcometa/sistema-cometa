@@ -47,6 +47,94 @@ body {
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(22, 58, 89, 0.08), transparent 34%),
+    var(--background);
+}
+
+.auth-card {
+  display: grid;
+  width: min(100%, 430px);
+  gap: 16px;
+  padding: 28px;
+  border: 1px solid var(--brand-blue-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.auth-card img {
+  width: 220px;
+  max-width: 75%;
+  height: auto;
+}
+
+.auth-card h1 {
+  margin: 0;
+  color: var(--brand-blue);
+  font-size: 1.45rem;
+  letter-spacing: 0;
+}
+
+.auth-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.auth-form,
+.auth-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-message {
+  padding: 10px 12px;
+  border: 1px solid var(--brand-blue-line);
+  border-radius: 8px;
+  background: var(--brand-blue-soft);
+  color: var(--brand-blue) !important;
+  font-weight: 800;
+}
+
+.auth-link-button {
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand-blue);
+  font-weight: 900;
+  text-align: left;
+}
+
+.session-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  width: min(100%, 1540px);
+  margin: 0 auto;
+  padding: 10px 28px 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.session-strip button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--brand-blue-line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--brand-blue);
+  font-weight: 900;
+}
+
 button,
 input,
 select,
