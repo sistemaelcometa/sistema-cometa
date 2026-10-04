@@ -135,6 +135,18 @@ body {
   font-weight: 900;
 }
 
+.sync-message {
+  width: min(100%, 1540px);
+  margin: 10px auto 0;
+  padding: 10px 14px;
+  border: 1px solid var(--brand-blue-line);
+  border-radius: 8px;
+  background: var(--brand-blue-soft);
+  color: var(--brand-blue);
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
 button,
 input,
 select,

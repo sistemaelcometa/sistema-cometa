@@ -34,6 +34,12 @@ type ManagedMember = {
 
 type AuthMode = "login" | "register";
 
+const ActiveMembershipContext = React.createContext<Membership | null>(null);
+
+export function useActiveMembership() {
+  return React.useContext(ActiveMembershipContext);
+}
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -266,7 +272,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <>
+    <ActiveMembershipContext.Provider value={activeMembership}>
       <div className="session-strip">
         <span>
           {user.email} · {activeMembership.role}
@@ -287,7 +293,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         />
       )}
       {children}
-    </>
+    </ActiveMembershipContext.Provider>
   );
 }
 
