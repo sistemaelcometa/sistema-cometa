@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase/client";
+import {
+  isSupabaseConfigured,
+  supabase,
+  supabaseConfigError,
+} from "@/lib/supabase/client";
 
 type Organization = {
   id: string;
@@ -150,10 +154,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     return (
       <main className="auth-shell">
         <AuthCard title="Conectar Supabase">
-          <p>
-            Faltan `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-            en el entorno.
-          </p>
+          <p>{supabaseConfigError}</p>
         </AuthCard>
       </main>
     );
