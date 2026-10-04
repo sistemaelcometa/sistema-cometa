@@ -1566,6 +1566,41 @@ textarea {
   margin-inline: auto;
 }
 
+.access-table table {
+  min-width: 760px;
+}
+
+.access-table td strong,
+.access-table td small {
+  display: block;
+}
+
+.access-table td small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.access-table select {
+  min-width: 116px;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.danger-soft {
+  border-color: #111827 !important;
+  background: #fee2e2 !important;
+  color: #111827 !important;
+}
+
 table {
   width: 100%;
   min-width: 920px;
