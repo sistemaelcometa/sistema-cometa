@@ -6,10 +6,10 @@ set search_path = public
 as $$
   select case
     when method is null then null
-    when 'transfer' then 'Transferencia'
-    when 'cash' then 'Efectivo'
-    when 'deposit' then 'Deposito'
-    when 'card' then 'Tarjeta'
+    when method = 'transfer' then 'Transferencia'
+    when method = 'cash' then 'Efectivo'
+    when method = 'deposit' then 'Deposito'
+    when method = 'card' then 'Tarjeta'
     else 'Otro'
   end;
 $$;
