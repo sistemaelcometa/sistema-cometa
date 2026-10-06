@@ -160,8 +160,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       await loadAccessState();
       setMessage(
         action === "claim"
-          ? "Rol owner activado."
-          : "Solicitud enviada. Un administrador debe habilitar tu usuario.",
+          ? "Rol dueño activado."
+          : "Solicitud enviada. Un dueño o administrador debe habilitar tu usuario.",
       );
     }
 
@@ -275,7 +275,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     <ActiveMembershipContext.Provider value={activeMembership}>
       <div className="session-strip">
         <span>
-          {user.email} · {activeMembership.role}
+          {user.email} · {roleLabel(activeMembership.role)}
         </span>
         {["owner", "admin"].includes(activeMembership.role) && (
           <button type="button" onClick={() => setShowMembers(true)}>
@@ -326,6 +326,7 @@ function MembersModal({
   const [disableTarget, setDisableTarget] =
     React.useState<ManagedMember | null>(null);
   const canManageOwners = membership.role === "owner";
+  const canManageSensitiveRoles = membership.role === "owner";
 
   const loadMembers = React.useCallback(async () => {
     if (!supabase) return;
@@ -427,8 +428,8 @@ function MembersModal({
               </thead>
               <tbody>
                 {members.map((member) => {
-                  const isOwner = member.role === "owner";
-                  const canEditMember = canManageOwners || !isOwner;
+                  const isSensitiveRole = member.role === "owner" || member.role === "admin";
+                  const canEditMember = canManageOwners || !isSensitiveRole;
 
                   return (
                     <tr key={member.member_id}>
@@ -452,10 +453,14 @@ function MembersModal({
                             )
                           }
                         >
-                          <option value="viewer">Viewer</option>
-                          <option value="editor">Editor</option>
-                          <option value="admin">Admin</option>
-                          {canManageOwners && <option value="owner">Owner</option>}
+                          <option value="viewer">Solo lectura</option>
+                          <option value="editor">Usuario</option>
+                          {(canManageSensitiveRoles || member.role === "admin") && (
+                            <option value="admin">Admin</option>
+                          )}
+                          {(canManageSensitiveRoles || member.role === "owner") && (
+                            <option value="owner">Dueño</option>
+                          )}
                         </select>
                       </td>
                       <td>{formatAccessDate(member.requested_at)}</td>
@@ -542,6 +547,15 @@ function memberStatusLabel(status: ManagedMember["member_status"]) {
     active: "Activo",
     disabled: "Desactivado",
   }[status];
+}
+
+function roleLabel(role: ManagedMember["role"] | Membership["role"]) {
+  return {
+    owner: "Dueño",
+    admin: "Admin",
+    editor: "Usuario",
+    viewer: "Solo lectura",
+  }[role];
 }
 
 function memberStatusTone(status: ManagedMember["member_status"]) {
