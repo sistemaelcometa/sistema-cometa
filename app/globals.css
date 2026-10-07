@@ -3630,11 +3630,18 @@ button:disabled {
 }
 
 .liquidation-person-card {
+  position: relative;
   min-height: 136px;
   padding: 22px 26px;
   text-align: center;
   align-content: center;
   justify-items: center;
+}
+
+.beneficiary-edit-button {
+  position: absolute;
+  top: 12px;
+  left: 12px;
 }
 
 .liquidation-person-card small {
