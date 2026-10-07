@@ -1,6 +1,5 @@
--- Permite archivar beneficiarios sin liquidaciones cerradas.
--- Si el beneficiario participa en distribuciones activas, se archivan esas
--- distribuciones completas para evitar que queden porcentajes inconsistentes.
+-- Corrige referencias ambiguas dentro de archive_family_beneficiary.
+-- La firma se mantiene igual para no romper las llamadas del frontend.
 
 create or replace function archive_family_beneficiary(
   target_organization_id uuid,
