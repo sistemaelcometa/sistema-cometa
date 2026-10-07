@@ -273,28 +273,74 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   return (
     <ActiveMembershipContext.Provider value={activeMembership}>
-      <div className="session-strip">
-        <span>
-          {user.email} · {roleLabel(activeMembership.role)}
-        </span>
-        {["owner", "admin"].includes(activeMembership.role) && (
-          <button type="button" onClick={() => setShowMembers(true)}>
-            Usuarios
+      <RuntimeErrorBoundary>
+        <div className="session-strip">
+          <span>
+            {user.email} · {roleLabel(activeMembership.role)}
+          </span>
+          {["owner", "admin"].includes(activeMembership.role) && (
+            <button type="button" onClick={() => setShowMembers(true)}>
+              Usuarios
+            </button>
+          )}
+          <button type="button" onClick={handleSignOut}>
+            Salir
           </button>
+        </div>
+        {showMembers && (
+          <MembersModal
+            membership={activeMembership}
+            onClose={() => setShowMembers(false)}
+          />
         )}
-        <button type="button" onClick={handleSignOut}>
-          Salir
-        </button>
-      </div>
-      {showMembers && (
-        <MembersModal
-          membership={activeMembership}
-          onClose={() => setShowMembers(false)}
-        />
-      )}
-      {children}
+        {children}
+      </RuntimeErrorBoundary>
     </ActiveMembershipContext.Provider>
   );
+}
+
+type RuntimeErrorBoundaryState = {
+  error: Error | null;
+};
+
+class RuntimeErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  RuntimeErrorBoundaryState
+> {
+  state: RuntimeErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("RuntimeErrorBoundary", error);
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+
+    return (
+      <main className="auth-shell">
+        <section className="auth-card">
+          <img src="/el-cometa-logo.png" alt="El Cometa" />
+          <h1>Error de pantalla</h1>
+          <p>
+            La información no se borró: se cortó el render del sistema antes de
+            poder mostrarla.
+          </p>
+          <p className="auth-message">{this.state.error.message}</p>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => window.location.reload()}
+          >
+            Recargar sistema
+          </button>
+        </section>
+      </main>
+    );
+  }
 }
 
 function AuthCard({
