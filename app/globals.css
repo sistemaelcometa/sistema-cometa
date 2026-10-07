@@ -3641,7 +3641,7 @@ button:disabled {
 .beneficiary-edit-button {
   position: absolute;
   top: 12px;
-  left: 12px;
+  right: 12px;
 }
 
 .liquidation-person-card small {
