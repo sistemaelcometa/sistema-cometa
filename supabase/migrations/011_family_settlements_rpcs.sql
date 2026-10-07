@@ -337,7 +337,7 @@ begin
     raise exception 'No tenes permisos para guardar distribuciones.';
   end if;
 
-  if valid_from is null then
+  if save_family_distribution.valid_from is null then
     raise exception 'La fecha de vigencia es obligatoria.';
   end if;
 
@@ -385,7 +385,8 @@ begin
   set
     status = 'archived',
     valid_to = case
-      when valid_from > family_distribution_groups.valid_from then valid_from - 1
+      when save_family_distribution.valid_from > family_distribution_groups.valid_from
+        then save_family_distribution.valid_from - 1
       else family_distribution_groups.valid_from
     end
   where organization_id = target_organization_id
