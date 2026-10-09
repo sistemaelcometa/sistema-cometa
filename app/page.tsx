@@ -60,7 +60,6 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
   const [paidError, setPaidError] = React.useState(``);
   const [editingPayment, setEditingPayment] = React.useState(null);
   const [deletingPayment, setDeletingPayment] = React.useState(null);
-  const [deletingCharge, setDeletingCharge] = React.useState(null);
   const currentMonthEnd = v(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const nextMonthStartInput = v(nextMonthStart);
@@ -316,7 +315,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
                         </td>
                         <td>{formatCurrency(total, charge.currency)}</td>
                         <td><W status={charge.status} /></td>
-                        <td><div className="table-icon-actions"><button className="small-button" onClick={() => onRegisterPayment(displayCharge)}>Registrar cobro</button><button className="circle-icon-button danger-icon-button" type="button" onClick={() => setDeletingCharge(charge)} aria-label="Eliminar pendiente" title="Eliminar pendiente">×</button></div></td>
+                        <td><div className="table-icon-actions"><button className="small-button" onClick={() => onRegisterPayment(displayCharge)}>Registrar cobro</button></div></td>
                       </tr>
                     );
                   })}
@@ -378,7 +377,6 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
         </div>
       )}
 
-      {deletingCharge && <ModalShell title="Eliminar pendiente" description={`${deletingCharge.unit} - ${deletingCharge.tenant}`} confirmLabel="Eliminar" onClose={() => setDeletingCharge(null)} onConfirm={() => { onCancelPendingCharge?.(deletingCharge); setDeletingCharge(null); }}><p className="warning-box delete-warning-box">Se anulará el cargo pendiente. Si ya tiene un cobro registrado, Supabase no permitirá eliminarlo.</p></ModalShell>}
       {editingPayment && <ie payment={editingPayment} onClose={() => setEditingPayment(null)} onSave={(payment) => { onUpdatePaymentRecord(editingPayment.id, payment); setEditingPayment(null); }} />}
       {deletingPayment && <ModalShell title="Eliminar cobro" description={`${deletingPayment.unit} - ${deletingPayment.tenant}`} confirmLabel="Eliminar" onClose={() => setDeletingPayment(null)} onConfirm={() => { onDeletePaymentRecord?.(deletingPayment.id); setDeletingPayment(null); }}><p className="warning-box delete-warning-box">Se eliminará el cobro registrado y dejará de figurar en cobrados y reportes.</p></ModalShell>}
     </section>
