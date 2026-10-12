@@ -77,7 +77,9 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
   }
 
   function canDeletePendingCharge(charge) {
-    return charge.canCancel === true || (!charge.projected && charge.status === `pending` && Number(charge.paid || 0) <= 0);
+    const unit = unitById.get(charge.unitId);
+    const hasActiveLease = unit?.status === `Alquilado`;
+    return !hasActiveLease && !charge.projected && charge.status === `pending` && Number(charge.paid || 0) <= 0;
   }
 
   function dueDateFor(unit, monthDate) {
