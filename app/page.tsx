@@ -60,6 +60,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
   const [paidError, setPaidError] = React.useState(``);
   const [editingPayment, setEditingPayment] = React.useState(null);
   const [deletingPayment, setDeletingPayment] = React.useState(null);
+  const [deletingCharge, setDeletingCharge] = React.useState(null);
   const currentMonthEnd = v(new Date(now.getFullYear(), now.getMonth() + 1, 0));
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const nextMonthStartInput = v(nextMonthStart);
@@ -73,6 +74,11 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
   function chargeUsesExpenses(charge) {
     const unit = unitById.get(charge.unitId);
     return expenseEnabledByBuilding.get(unit?.buildingId) !== false;
+  }
+
+  function canDeletePendingCharge(charge) {
+    const unit = unitById.get(charge.unitId);
+    return charge.status === `pending` && Number(charge.paid || 0) <= 0 && unit?.status !== `Alquilado`;
   }
 
   function dueDateFor(unit, monthDate) {
@@ -315,7 +321,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
                         </td>
                         <td>{formatCurrency(total, charge.currency)}</td>
                         <td><W status={charge.status} /></td>
-                        <td><div className="table-icon-actions"><button className="small-button" onClick={() => onRegisterPayment(displayCharge)}>Registrar cobro</button></div></td>
+                        <td><div className="table-icon-actions"><button className="small-button" onClick={() => onRegisterPayment(displayCharge)}>Registrar cobro</button>{canDeletePendingCharge(charge) && <button className="circle-icon-button danger-icon-button" type="button" onClick={() => setDeletingCharge(charge)} aria-label={`Eliminar cobro pendiente de ${charge.unit}`} title="Eliminar cobro pendiente">×</button>}</div></td>
                       </tr>
                     );
                   })}
@@ -379,6 +385,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
 
       {editingPayment && <ie payment={editingPayment} onClose={() => setEditingPayment(null)} onSave={(payment) => { onUpdatePaymentRecord(editingPayment.id, payment); setEditingPayment(null); }} />}
       {deletingPayment && <ModalShell title="Eliminar cobro" description={`${deletingPayment.unit} - ${deletingPayment.tenant}`} confirmLabel="Eliminar" onClose={() => setDeletingPayment(null)} onConfirm={() => { onDeletePaymentRecord?.(deletingPayment.id); setDeletingPayment(null); }}><p className="warning-box delete-warning-box">Se eliminará el cobro registrado y dejará de figurar en cobrados y reportes.</p></ModalShell>}
+      {deletingCharge && <ModalShell title="Eliminar cobro pendiente" description={`${deletingCharge.unit} - ${deletingCharge.tenant}`} confirmLabel="Eliminar" onClose={() => setDeletingCharge(null)} onConfirm={() => { onCancelPendingCharge?.(deletingCharge); setDeletingCharge(null); }}><p className="warning-box delete-warning-box">Se anulará este vencimiento pendiente. Solo se permite si no tiene pagos registrados.</p></ModalShell>}
     </section>
   );
 }function A(e){let t=[`Comprobante de cobro`,e.unit,e.building,`Inquilino: ${e.tenant}`,`Fecha: ${_(e.paidAt)}`,`Importe cobrado: ${formatCurrency(e.amount,e.currency??`ARS`)}`,e.allocation?`Imputación: Expensas ${formatCurrency(e.allocation.expensesPaid??0,e.currency??`ARS`)} · Intereses expensas ${formatCurrency(e.allocation.expenseSurchargePaid??0,e.currency??`ARS`)} · Alquiler ${formatCurrency(e.allocation.rentPaid??0,e.currency??`ARS`)} · Intereses alquiler ${formatCurrency(e.allocation.rentSurchargePaid??0,e.currency??`ARS`)}`:``,`Medio: ${e.method}`,e.notes?`Observaciones: ${e.notes}`:``,e.receiptName?`Archivo guardado: ${e.receiptName}`:``].filter(Boolean).join(`
