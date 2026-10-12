@@ -1647,6 +1647,22 @@ td.overdue-date {
   font-weight: 900;
 }
 
+.rent-update-cell {
+  display: grid;
+  gap: 3px;
+}
+
+.rent-update-cell strong {
+  color: #92400e;
+  font-weight: 900;
+}
+
+.rent-update-cell small {
+  color: #92400e;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .no-expenses-cell strong {
   color: var(--muted);
   font-weight: 900;

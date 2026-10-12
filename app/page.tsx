@@ -82,6 +82,11 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
     return !hasActiveLease && !charge.projected && charge.status === `pending` && Number(charge.paid || 0) <= 0;
   }
 
+  function needsRentUpdate(charge) {
+    const unit = unitById.get(charge.unitId);
+    return unit?.status === `Alquilado` && !!unit.nextUpdate && charge.dueDate >= unit.nextUpdate && (!unit.leaseEnd || charge.dueDate <= unit.leaseEnd);
+  }
+
   function dueDateFor(unit, monthDate) {
     const lastDay = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
     const dueDay = Math.min(Number(unit.dueDay || 1), lastDay);
@@ -308,21 +313,23 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
                     const buildingHasExpenses = chargeUsesExpenses(charge);
                     const expensesTotal = charge.expenses + charge.transferredExpenses;
                     const expensesNotLiquidated = buildingHasExpenses && expensesTotal <= 0;
+                    const rentNeedsUpdate = needsRentUpdate(charge);
                     const displayCharge = buildingHasExpenses ? {...charge, hasExpenses: true} : {...charge, expenses: 0, transferredExpenses: 0, hasExpenses: false};
-                    const total = displayCharge.rent + displayCharge.expenses + displayCharge.transferredExpenses;
+                    const total = rentNeedsUpdate ? displayCharge.expenses + displayCharge.transferredExpenses : displayCharge.rent + displayCharge.expenses + displayCharge.transferredExpenses;
+                    const unit = unitById.get(charge.unitId);
                     return (
                       <tr key={charge.id}>
                         <td>{charge.unit}</td>
                         <td>{charge.building}</td>
                         <td>{charge.tenant}</td>
                         <td className={charge.dueDate < v(new Date()) ? `overdue-date` : ``}>{_(charge.dueDate)}</td>
-                        <td>{formatCurrency(charge.rent, charge.currency)}</td>
+                        <td>{rentNeedsUpdate ? <span className="rent-update-cell"><strong>Actualizar</strong><small>Desde {_(unit?.nextUpdate)}</small></span> : formatCurrency(charge.rent, charge.currency)}</td>
                         <td className={buildingHasExpenses ? expensesNotLiquidated ? `expense-unliquidated-cell` : `` : `no-expenses-cell`}>
                           {buildingHasExpenses ? <><strong>{formatCurrency(expensesTotal, charge.currency)}</strong>{expensesNotLiquidated && <small>Sin liquidar</small>}</> : <strong>-</strong>}
                         </td>
-                        <td>{formatCurrency(total, charge.currency)}</td>
+                        <td>{rentNeedsUpdate ? <span className="rent-update-cell"><strong>A definir</strong>{total > 0 && <small>Expensas {formatCurrency(total, charge.currency)}</small>}</span> : formatCurrency(total, charge.currency)}</td>
                         <td><W status={charge.status} /></td>
-                        <td><div className="table-icon-actions"><button className="small-button" onClick={() => onRegisterPayment(displayCharge)}>Registrar cobro</button>{canDeletePendingCharge(charge) && <button className="circle-icon-button danger-icon-button" type="button" onClick={() => setDeletingCharge(charge)} aria-label={`Eliminar cobro pendiente de ${charge.unit}`} title="Eliminar cobro pendiente">×</button>}</div></td>
+                        <td><div className="table-icon-actions"><button className="small-button" onClick={() => onRegisterPayment(displayCharge)} disabled={rentNeedsUpdate} title={rentNeedsUpdate ? `Actualizá el alquiler antes de registrar este cobro` : undefined}>Registrar cobro</button>{canDeletePendingCharge(charge) && <button className="circle-icon-button danger-icon-button" type="button" onClick={() => setDeletingCharge(charge)} aria-label={`Eliminar cobro pendiente de ${charge.unit}`} title="Eliminar cobro pendiente">×</button>}</div></td>
                       </tr>
                     );
                   })}
