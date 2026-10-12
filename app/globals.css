@@ -2917,6 +2917,15 @@ button:disabled {
   position: relative;
 }
 
+.pde-report-panel .responsive-table th:last-child,
+.pde-report-panel .responsive-table td:last-child {
+  text-align: center;
+}
+
+.pde-report-panel .responsive-table td:last-child .compact-actions {
+  justify-content: center;
+}
+
 .pde-report-panel > .report-filter-bar {
   position: absolute;
   top: -74px;
