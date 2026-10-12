@@ -82,9 +82,15 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
     return !hasActiveLease && !charge.projected && charge.status === `pending` && Number(charge.paid || 0) <= 0;
   }
 
-  function needsRentUpdate(charge) {
+  function chargeRentUpdateDate(charge) {
     const unit = unitById.get(charge.unitId);
-    return unit?.status === `Alquilado` && !!unit.nextUpdate && charge.dueDate >= unit.nextUpdate && (!unit.leaseEnd || charge.dueDate <= unit.leaseEnd);
+    if (unit?.status !== `Alquilado` || !unit.nextUpdate || charge.dueDate < unit.nextUpdate || unit.leaseEnd && charge.dueDate > unit.leaseEnd) return ``;
+    const schedule = leaseUpdateDates(unit.leaseStart || unit.nextDue, unit.leaseEnd, unit.updateFrequencyMonths).filter((date) => date >= unit.nextUpdate && date <= charge.dueDate);
+    return schedule[schedule.length - 1] || unit.nextUpdate;
+  }
+
+  function needsRentUpdate(charge) {
+    return !!chargeRentUpdateDate(charge);
   }
 
   function dueDateFor(unit, monthDate) {
@@ -313,17 +319,17 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
                     const buildingHasExpenses = chargeUsesExpenses(charge);
                     const expensesTotal = charge.expenses + charge.transferredExpenses;
                     const expensesNotLiquidated = buildingHasExpenses && expensesTotal <= 0;
-                    const rentNeedsUpdate = needsRentUpdate(charge);
+                    const rentUpdateDate = chargeRentUpdateDate(charge);
+                    const rentNeedsUpdate = !!rentUpdateDate;
                     const displayCharge = buildingHasExpenses ? {...charge, hasExpenses: true} : {...charge, expenses: 0, transferredExpenses: 0, hasExpenses: false};
                     const total = rentNeedsUpdate ? displayCharge.expenses + displayCharge.transferredExpenses : displayCharge.rent + displayCharge.expenses + displayCharge.transferredExpenses;
-                    const unit = unitById.get(charge.unitId);
                     return (
                       <tr key={charge.id}>
                         <td>{charge.unit}</td>
                         <td>{charge.building}</td>
                         <td>{charge.tenant}</td>
                         <td className={charge.dueDate < v(new Date()) ? `overdue-date` : ``}>{_(charge.dueDate)}</td>
-                        <td>{rentNeedsUpdate ? <span className="rent-update-cell"><strong>Actualizar</strong><small>Desde {_(unit?.nextUpdate)}</small></span> : formatCurrency(charge.rent, charge.currency)}</td>
+                        <td>{rentNeedsUpdate ? <span className="rent-update-cell"><strong>Actualizar</strong><small>{_(rentUpdateDate)}</small></span> : formatCurrency(charge.rent, charge.currency)}</td>
                         <td className={buildingHasExpenses ? expensesNotLiquidated ? `expense-unliquidated-cell` : `` : `no-expenses-cell`}>
                           {buildingHasExpenses ? <><strong>{formatCurrency(expensesTotal, charge.currency)}</strong>{expensesNotLiquidated && <small>Sin liquidar</small>}</> : <strong>-</strong>}
                         </td>
