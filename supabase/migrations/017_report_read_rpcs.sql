@@ -75,7 +75,10 @@ as $$
 
     select
       'urban_expense_item:' || e.id::text as row_id,
-      'urban_expense_item' as source_type,
+      case
+        when lower(coalesce(e.description, '')) like 'mantenimiento general%' then 'urban_expense_maintenance'
+        else 'urban_expense_item'
+      end as source_type,
       e.id as source_id,
       e.expense_date as movement_date,
       'Egreso' as movement_kind,
@@ -190,12 +193,12 @@ as $$
       'ARS', jsonb_build_object(
         'rentIncome', coalesce(sum(amount) filter (where currency = 'ARS' and source_type = 'urban_payment'), 0),
         'expenseCosts', coalesce(sum(amount) filter (where currency = 'ARS' and source_type = 'urban_expense_item'), 0),
-        'maintenanceCosts', coalesce(sum(amount) filter (where currency = 'ARS' and source_type = 'maintenance_expense'), 0)
+        'maintenanceCosts', coalesce(sum(amount) filter (where currency = 'ARS' and source_type in ('maintenance_expense', 'urban_expense_maintenance')), 0)
       ),
       'USD', jsonb_build_object(
         'rentIncome', coalesce(sum(amount) filter (where currency = 'USD' and source_type = 'urban_payment'), 0),
         'expenseCosts', coalesce(sum(amount) filter (where currency = 'USD' and source_type = 'urban_expense_item'), 0),
-        'maintenanceCosts', coalesce(sum(amount) filter (where currency = 'USD' and source_type = 'maintenance_expense'), 0)
+        'maintenanceCosts', coalesce(sum(amount) filter (where currency = 'USD' and source_type in ('maintenance_expense', 'urban_expense_maintenance')), 0)
       )
     ),
     'totalCount', (select count(*) from filtered_rows),
