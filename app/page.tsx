@@ -108,41 +108,8 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
 
   const projectedPending = React.useMemo(() => {
     const byKey = new Map();
-    const byMonth = new Set();
-    ((allCharges && allCharges.length ? allCharges : charges) || pendingCharges || []).forEach((charge) => byMonth.add(`${charge.unitId}-${charge.dueDate.slice(0, 7)}`));
-    (pendingCharges || []).forEach((charge) => byKey.set(`${charge.unitId}-${charge.dueDate}`, charge));
-    const activeUnits = (units || []).filter((unit) => unit.status === `Alquilado` && unit.dueDay && unit.leaseEnd);
-
-    function addProjected(unit, monthDate) {
-      const dueDate = dueDateFor(unit, monthDate);
-      if (dueDate > unit.leaseEnd) return;
-      const key = `${unit.id}-${dueDate}`;
-      const monthKey = `${unit.id}-${dueDate.slice(0, 7)}`;
-      if (byKey.has(key) || byMonth.has(monthKey)) return;
-      byKey.set(key, {
-        id: `projected-${key}`,
-        unitId: unit.id,
-        building: unit.building,
-        unit: unit.name,
-        tenant: unit.tenant,
-        dueDate,
-        rent: g(unit.leaseAmount),
-        expenses: 0,
-        transferredExpenses: 0,
-        paid: 0,
-        currency: unit.currency || `ARS`,
-        status: `pending`,
-        projected: true,
-      });
-      byMonth.add(monthKey);
-    }
-
-    activeUnits.forEach((unit) => {
-      addProjected(unit, new Date(now.getFullYear(), now.getMonth(), 1));
-      const leaseEnd = new Date(unit.leaseEnd);
-      for (let monthDate = new Date(nextMonthStart); monthDate <= leaseEnd; monthDate = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1)) {
-        addProjected(unit, monthDate);
-      }
+    ((allCharges && allCharges.length ? allCharges : pendingCharges || charges || [])).forEach((charge) => {
+      if (!charge.projected) byKey.set(`${charge.unitId}-${charge.dueDate}`, charge);
     });
 
     return Array.from(byKey.values())
@@ -150,14 +117,12 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
         const linkedPaid = (paymentRecords || [])
           .filter((payment) => payment.chargeId === charge.id)
           .reduce((total, payment) => total + payment.amount, 0);
-        const total = charge.rent + charge.expenses + charge.transferredExpenses;
-        if (charge.projected) return {...charge, paid: linkedPaid, status: linkedPaid >= total && total > 0 ? `paid` : linkedPaid > 0 ? `partial` : `pending`};
         if (charge.dueDate >= nextMonthStartInput && linkedPaid === 0) return {...charge, paid: 0, status: `pending`};
         return charge;
       })
       .filter((charge) => charge.status !== `paid` && charge.status !== `cancelled`)
       .sort((left, right) => left.dueDate.localeCompare(right.dueDate));
-  }, [pendingCharges, charges, allCharges, paymentRecords, units]);
+  }, [pendingCharges, charges, allCharges, paymentRecords]);
 
   const visiblePending = projectedPending.filter((charge) => {
     const isCurrentWithOverdue = charge.dueDate <= currentMonthEnd;
