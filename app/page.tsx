@@ -294,7 +294,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],bui
                     const expenseMonthLabel = expensePeriodMonth ? `${p[Number(String(expensePeriodMonth).slice(5, 7)) - 1] || ``} ${String(expensePeriodMonth).slice(0, 4)}`.trim() : ``;
                     const rentUpdateDate = chargeRentUpdateDate(charge);
                     const rentNeedsUpdate = !!rentUpdateDate;
-                    const displayCharge = buildingHasExpenses ? {...charge, expenses: expensesTotal, transferredExpenses: 0, hasExpenses: true} : {...charge, expenses: 0, transferredExpenses: 0, hasExpenses: false};
+                    const displayCharge = {...charge, expenses: buildingHasExpenses ? expensesTotal : 0, transferredExpenses: 0, hasExpenses: buildingHasExpenses, expensesNotLiquidated};
                     const total = rentNeedsUpdate || expensesNotLiquidated ? displayCharge.expenses + displayCharge.transferredExpenses : displayCharge.rent + displayCharge.expenses + displayCharge.transferredExpenses;
                     const registerDisabled = rentNeedsUpdate || expensesNotLiquidated;
                     const registerTitle = rentNeedsUpdate ? `Actualizá el alquiler antes de registrar este cobro` : expensesNotLiquidated ? `Liquidá las expensas del mes anterior antes de registrar este cobro` : undefined;
@@ -504,6 +504,7 @@ function PdeMovementHistoryModal({movements,onClose}){
   return <div className="modal-backdrop stacked-modal" role="presentation"><section aria-modal="true" className="modal wide-modal pde-modal" role="dialog"><div className="section-title"><div><h3>Historial de movimientos</h3><p>Ingresos y egresos que forman el saldo</p></div><button className="icon-button" onClick={onClose} aria-label="Cerrar">X</button></div>{movements.length===0?<p className="empty-state">Todavía no hay movimientos cargados.</p>:<div className="responsive-table"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Depto</th><th>Detalle</th><th>Importe</th><th>Comprobante</th></tr></thead><tbody>{movements.map(item=><tr key={item.id}><td>{_(item.date)}</td><td>{item.type}</td><td>{item.unit}</td><td>{item.detail}</td><td className={item.type===`Ingreso`?`pde-movement-income`:`pde-movement-expense`}><strong>{item.type===`Ingreso`?formatCurrency(item.amount,item.currency):`- ${formatCurrency(Math.abs(item.amount),item.currency)}`}</strong></td><td>{item.receiptName||`Sin comprobante`}</td></tr>)}</tbody></table></div>}</section></div>}function ue({charge,amount,warning,setAmount,onClose,onSubmit}){
   const [paidAt,setPaidAt]=React.useState(v(new Date)),[noSurcharge,setNoSurcharge]=React.useState(false);
   const hasExpenses=charge.hasExpenses!==false,expenses=hasExpenses?charge.expenses+charge.transferredExpenses:0;
+  const expensesNotLiquidated=hasExpenses&&(charge.expensesNotLiquidated??![`calculated`,`closed`].includes(charge.expensePeriodStatus||``));
   const dueDate=new Date(`${charge.dueDate}T00:00:00`),paymentDate=new Date(`${paidAt}T00:00:00`);
   const lateDays=paidAt>charge.dueDate?Math.max(0,Math.ceil((paymentDate.getTime()-dueDate.getTime())/864e5)):0;
   const expenseFactor=noSurcharge?1:expenseSurchargeFactor(paidAt,charge.dueDate);
@@ -526,7 +527,7 @@ function PdeMovementHistoryModal({movements,onClose}){
         <div className="payment-breakdown">
           <span>Alquiler<strong>{formatPaymentCurrency(charge.rent,charge.currency)}</strong></span>
           <span><small>Recargo alquiler ({lateDays} {lateDays===1?`día`:`días`} - {lateDays}%)</small><strong>{formatPaymentCurrency(rentSurcharge,charge.currency)}</strong></span>
-          {hasExpenses?<><span className={expenses<=0?`expense-unliquidated-inline`:undefined}>Expensas<strong>{formatPaymentCurrency(expenses,charge.currency)}{expenses<=0&&<small>Sin liquidar</small>}</strong></span>
+          {hasExpenses?<><span className={expensesNotLiquidated?`expense-unliquidated-inline`:undefined}>Expensas<strong>{formatPaymentCurrency(expenses,charge.currency)}{expensesNotLiquidated&&<small>Sin liquidar</small>}</strong></span>
             <span><small>Recargo expensas ({expenseSurchargePercent}%)</small><strong>{formatPaymentCurrency(expenseSurcharge,charge.currency)}</strong></span></>:
             <span className="no-expenses-cell">Expensas<strong>-</strong></span>}
         </div>
