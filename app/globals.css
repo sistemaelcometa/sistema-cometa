@@ -2386,6 +2386,15 @@ th {
   border-radius: 0;
 }
 
+.manual-receipt-money {
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.manual-receipt-money select {
+  border: 0;
+  border-radius: 0;
+}
+
 .lease-amount-input {
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
