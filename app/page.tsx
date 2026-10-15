@@ -252,7 +252,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],exp
       </div>
 
       {tab === `pending` && (
-        <div className="payment-tab-panel" role="tabpanel">
+        <div className="payment-tab-panel pending-payments-panel" role="tabpanel">
           <div className="payment-filter-row">
             <label className="field">
               Buscar

@@ -3716,6 +3716,7 @@ button:disabled {
 }
 
 .liquidations-panel th,
+.pending-payments-panel th,
 .paid-payments-panel th {
   color: var(--brand-blue);
 }
