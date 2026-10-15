@@ -3662,6 +3662,22 @@ button:disabled {
   font-weight: 700;
 }
 
+.family-liquidation-title {
+  font-weight: 700;
+}
+
+.section-title .family-liquidation-status {
+  font-weight: 700;
+}
+
+.section-title .family-liquidation-status.is-open {
+  color: var(--green-text);
+}
+
+.section-title .family-liquidation-status.is-closed {
+  color: var(--red-text);
+}
+
 .family-settlement-history th {
   color: var(--brand-blue);
 }
