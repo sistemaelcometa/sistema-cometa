@@ -660,6 +660,11 @@ button {
   gap: 12px;
 }
 
+.calendar-steppers .calendar-period-select {
+  text-align: center;
+  text-align-last: center;
+}
+
 .calendar-period-stepper {
   display: grid;
   grid-template-columns: 30px minmax(0, 1fr) 30px;
