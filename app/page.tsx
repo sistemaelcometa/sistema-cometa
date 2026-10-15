@@ -408,7 +408,18 @@ endobj
   function addCurrency(total,currency,amount){return{...total,[currency]:(total[currency]||0)+Number(amount||0)}}
   function CurrencyTotals({total}){let values=currencies.map(currency=>({currency,amount:Number(total?.[currency]||0)}));return <span className="money-mini-table">{values.map(item=><span className="money-mini-column" key={item.currency}><strong>{item.currency===`ARS`?`$ `:`USD `}{new Intl.NumberFormat(`es-AR`,{maximumFractionDigits:0}).format(item.amount)}</strong></span>)}</span>}
   function normalizeSettlementRow(item){return{id:item.id,periodStart:item.periodStart??item.period_start,periodEnd:item.periodEnd??item.period_end,version:item.version??1,isCurrent:(item.isCurrent??item.is_current)!==false,statusKey:item.statusKey??item.status??`closed`,totalArs:Number(item.totalArs??item.total_ars??0),totalUsd:Number(item.totalUsd??item.total_usd??0),closedAt:item.closedAt??item.closed_at??``,itemCount:Number(item.itemCount??item.item_count??0),unitCount:Number(item.unitCount??item.unit_count??0),beneficiaryCount:Number(item.beneficiaryCount??item.beneficiary_count??0)}}
-  React.useEffect(()=>{if(!activeMembership||!supabase)return;let cancelled=false,key=resourceCacheKey(`familySettlementsPage`,{organizationId:activeMembership.organization_id,status:`all`,page:settlementPage,pageSize:settlementPageSize}),cached=resourceCache.get(key);cached?.data&&setRemoteSettlementsPage(cached.data);resourceCache.hydrate(key,async()=>{let{data,error}=await supabase.rpc(`get_family_settlements_page`,{target_organization_id:activeMembership.organization_id,status_filter:`all`,from_date:null,to_date:null,page_size:settlementPageSize,page_offset:(settlementPage-1)*settlementPageSize});if(error)throw error;return data},{staleMs:60000}).then(entry=>{if(!cancelled&&entry.data)setRemoteSettlementsPage(entry.data)}).catch(()=>{});return()=>{cancelled=true}},[activeMembership?.organization_id,settlementPage]);
+  React.useEffect(()=>{
+    setRemoteSettlementsPage(null);
+    if(!activeMembership||!supabase)return;
+    let cancelled=false,key=resourceCacheKey(`familySettlementsPage`,{organizationId:activeMembership.organization_id,status:`all`,page:settlementPage,pageSize:settlementPageSize}),cached=resourceCache.get(key);
+    if(cached?.data&&!resourceCache.isStale(key,60000))setRemoteSettlementsPage(cached.data);
+    resourceCache.hydrate(key,async()=>{
+      let{data,error}=await supabase.rpc(`get_family_settlements_page`,{target_organization_id:activeMembership.organization_id,status_filter:`all`,from_date:null,to_date:null,page_size:settlementPageSize,page_offset:(settlementPage-1)*settlementPageSize});
+      if(error)throw error;
+      return data;
+    },{staleMs:60000}).then(entry=>{if(!cancelled&&entry.data)setRemoteSettlementsPage(entry.data)}).catch(()=>{if(!cancelled)setRemoteSettlementsPage(null)});
+    return()=>{cancelled=true};
+  },[activeMembership?.organization_id,settlementPage,settlements]);
   const paymentRows=(paymentRecords||[]).flatMap(payment=>{
     if(!payment.paidAt)return[];
     let paidDate=new Date(`${payment.paidAt}T00:00:00`);
