@@ -838,7 +838,11 @@ button {
   color: var(--yellow-text);
 }
 
-.event-dot.neutral,
+.event-dot.neutral {
+  background: #B6D7A8;
+  color: var(--green-text);
+}
+
 .status-pill.neutral {
   background: var(--surface-muted);
   color: var(--muted);
