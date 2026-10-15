@@ -327,7 +327,7 @@ function O({selectedUnit:e,units:t,buildings:buildings=[],charges:charges=[],exp
       )}
 
       {tab === `paid` && (
-        <div className="payment-tab-panel" role="tabpanel">
+        <div className="payment-tab-panel paid-payments-panel" role="tabpanel">
           <div className="payment-filter-row">
             <label className="field">
               Buscar
