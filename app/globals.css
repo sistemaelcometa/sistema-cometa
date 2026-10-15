@@ -3656,6 +3656,16 @@ button:disabled {
   gap: 16px;
 }
 
+.family-settlement-history h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.family-settlement-history th {
+  color: var(--brand-blue);
+}
+
 .liquidation-toolbar,
 .liquidation-summary-row {
   display: grid;
