@@ -3682,6 +3682,12 @@ button:disabled {
   color: var(--brand-blue);
 }
 
+.family-settlement-history th,
+.family-settlement-history td {
+  text-align: center;
+  vertical-align: middle;
+}
+
 .liquidation-toolbar,
 .liquidation-summary-row {
   display: grid;
