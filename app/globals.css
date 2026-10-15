@@ -3678,7 +3678,7 @@ button:disabled {
   color: var(--red-text);
 }
 
-.family-settlement-history th {
+.liquidations-panel th {
   color: var(--brand-blue);
 }
 
