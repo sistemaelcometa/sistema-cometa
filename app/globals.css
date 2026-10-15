@@ -655,6 +655,39 @@ button {
   gap: 8px;
 }
 
+.calendar-steppers {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.calendar-period-stepper {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-step-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--button-line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--brand-blue);
+}
+
+.calendar-step-button:hover:not(:disabled) {
+  background: var(--button-soft-hover);
+}
+
+.calendar-step-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .calendar-period-select {
   min-width: 138px;
   height: 38px;
@@ -839,7 +872,7 @@ button {
 }
 
 .event-dot.neutral {
-  background: #B6D7A8;
+  background: #D9EAD3;
   color: var(--green-text);
 }
 
