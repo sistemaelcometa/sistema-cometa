@@ -13,7 +13,7 @@ const effect = family.body.statements.find(node => ts.isExpressionStatement(node
   && ts.isCallExpression(node.expression) && node.expression.expression.getText(ast) === "React.useEffect");
 
 function runEffect({ stale = true, fail = false } = {}) {
-  const states = [], fresh = { rows: [{ id: "saved-close" }], total: 1 };
+  const states = [], requests = [], fresh = { rows: [{ id: "saved-close" }], total: 1 };
   let dependencies, cleanup;
   vm.runInNewContext(effect.getText(ast), {
     React: { useEffect(callback, deps) { dependencies = deps; cleanup = callback(); } },
@@ -26,9 +26,9 @@ function runEffect({ stale = true, fail = false } = {}) {
       isStale: () => stale,
       hydrate: async (key, fetcher) => ({ data: await fetcher() }),
     },
-    supabase: { rpc: async () => ({ data: fresh, error: fail ? new Error("offline") : null }) },
+    supabase: { rpc: async (name, args) => { requests.push({ name, args }); return { data: fresh, error: fail ? new Error("offline") : null }; } },
   });
-  return { states, fresh, dependencies, cleanup };
+  return { states, fresh, dependencies, cleanup, requests };
 }
 
 test("history refreshes when loaded settlements change and does not reuse stale empty history", async () => {
@@ -38,6 +38,30 @@ test("history refreshes when loaded settlements change and does not reuse stale 
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(result.states.at(-1), result.fresh);
   assert.equal(result.states.length, 2);
+  assert.equal(result.requests[0].args.status_filter, "current");
+});
+
+test("history contains only the current close per period, excluding reopened versions", () => {
+  const normalizer = family.body.statements.find(node => ts.isFunctionDeclaration(node) && node.name.text === "normalizeSettlementRow");
+  const rowsStatement = family.body.statements.find(node => ts.isVariableStatement(node)
+    && node.declarationList.declarations.some(declaration => declaration.name.getText(ast) === "localSettlementRows"));
+  const settlements = [
+    { id: "old", period_start: "2026-10-01", period_end: "2026-10-31", version: 3, is_current: false, status: "cancelled" },
+    { id: "reopened", period_start: "2026-10-01", period_end: "2026-10-31", version: 6, is_current: false, status: "cancelled" },
+    { id: "current", period_start: "2026-10-01", period_end: "2026-10-31", version: 8, is_current: true, status: "closed" },
+    { id: "september", periodStart: "2026-09-01", periodEnd: "2026-09-30", version: 1, isCurrent: true, statusKey: "closed" },
+    { id: "corrected", period_start: "2026-09-01", period_end: "2026-09-30", version: 0, is_current: false, status: "corrected" },
+  ];
+  function visible(rows) {
+    return vm.runInNewContext(`${normalizer.getText(ast)}\n${rowsStatement.getText(ast)}\n({settlementRows,settlementTotal});`, {
+      settlements: rows, remoteSettlementsPage: null, settlementPageSize: 6, settlementPage: 1,
+    });
+  }
+  const result = visible(settlements);
+  assert.deepEqual(Array.from(result.settlementRows, row => row.id), ["current", "september"]);
+  assert.equal(result.settlementTotal, 2);
+  assert.equal(visible(settlements.filter(row => row.id !== "current" && row.id !== "september")).settlementTotal, 0);
+  assert.equal(settlements.length, 5);
 });
 
 test("failed history refresh falls back to loaded settlements", async () => {
