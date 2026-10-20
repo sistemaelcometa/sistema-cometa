@@ -3505,7 +3505,7 @@ button:disabled {
 
 @media (max-width: 760px) {
   .pde-calendar-toolbar {
-    grid-template-columns: 36px 1fr 36px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .pde-legend {

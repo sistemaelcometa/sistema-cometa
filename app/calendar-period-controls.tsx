@@ -6,41 +6,43 @@ type CalendarPeriodControlsProps = {
   value: Date;
   onChange: (value: Date) => void;
   months: string[];
+  firstYear?: number;
+  lastYear?: number;
+  labelSuffix?: string;
 };
 
-export function CalendarPeriodControls({ value, onChange, months }: CalendarPeriodControlsProps) {
+export function CalendarPeriodControls({ value, onChange, months, firstYear = 2020, lastYear = 2040, labelSuffix = "" }: CalendarPeriodControlsProps) {
   const year = value.getFullYear();
   const month = value.getMonth();
-  const firstYear = 2020;
-  const lastYear = 2040;
+  const label = (text: string) => labelSuffix ? `${text} ${labelSuffix}` : text;
 
   return (
     <div className="month-controls calendar-select-controls calendar-steppers">
       <div className="calendar-period-stepper">
-        <button className="calendar-step-button" type="button" aria-label="Mes anterior" title="Mes anterior"
+        <button className="calendar-step-button" type="button" aria-label={label("Mes anterior")} title="Mes anterior"
           disabled={year === firstYear && month === 0} onClick={() => onChange(new Date(year, month - 1, 1))}>
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
-        <select className="calendar-period-select" value={month} aria-label="Mes"
+        <select className="calendar-period-select" value={month} aria-label={label("Mes")}
           onChange={event => onChange(new Date(year, Number(event.target.value), 1))}>
           {months.map((label, index) => <option value={index} key={label}>{label}</option>)}
         </select>
-        <button className="calendar-step-button" type="button" aria-label="Mes siguiente" title="Mes siguiente"
+        <button className="calendar-step-button" type="button" aria-label={label("Mes siguiente")} title="Mes siguiente"
           disabled={year === lastYear && month === 11} onClick={() => onChange(new Date(year, month + 1, 1))}>
           <ChevronRight size={16} aria-hidden="true" />
         </button>
       </div>
       <div className="calendar-period-stepper">
-        <button className="calendar-step-button" type="button" aria-label="Año anterior" title="Año anterior"
+        <button className="calendar-step-button" type="button" aria-label={label("Año anterior")} title="Año anterior"
           disabled={year === firstYear} onClick={() => onChange(new Date(year - 1, month, 1))}>
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
-        <select className="calendar-period-select year-select" value={year} aria-label="Año"
+        <select className="calendar-period-select year-select" value={year} aria-label={label("Año")}
           onChange={event => onChange(new Date(Number(event.target.value), month, 1))}>
           {Array.from({ length: lastYear - firstYear + 1 }, (_, index) => firstYear + index)
             .map(option => <option value={option} key={option}>{option}</option>)}
         </select>
-        <button className="calendar-step-button" type="button" aria-label="Año siguiente" title="Año siguiente"
+        <button className="calendar-step-button" type="button" aria-label={label("Año siguiente")} title="Año siguiente"
           disabled={year === lastYear} onClick={() => onChange(new Date(year + 1, month, 1))}>
           <ChevronRight size={16} aria-hidden="true" />
         </button>

@@ -13,9 +13,9 @@ const exports = {};
 vm.runInNewContext(compiled, { exports, require, Date });
 const months = Array.from({ length: 12 }, (_, index) => `Month ${index}`);
 
-function controls(date) {
+function controls(date, options = {}) {
   let changed;
-  const tree = exports.CalendarPeriodControls({ value: date, onChange: value => { changed = value; }, months });
+  const tree = exports.CalendarPeriodControls({ value: date, onChange: value => { changed = value; }, months, ...options });
   const nodes = [];
   function visit(node) {
     if (!node || typeof node !== "object") return;
@@ -65,4 +65,19 @@ test("arrows respect the existing year range", () => {
   const last = controls(new Date(2040, 11, 1));
   assert.equal(last.find("Mes siguiente").props.disabled, true);
   assert.equal(last.find("Año siguiente").props.disabled, true);
+});
+
+test("PDE calendar preserves its year range and has distinct accessible labels", () => {
+  const options = { firstYear: 2026, lastYear: 2036, labelSuffix: "Punta del Este" };
+  const first = controls(new Date(2026, 0, 1), options);
+  assert.equal(first.find("Mes anterior Punta del Este").props.disabled, true);
+  assert.equal(first.find("Año anterior Punta del Este").props.disabled, true);
+  assert.equal(first.find("Año Punta del Este").props.children.length, 11);
+  const december = controls(new Date(2026, 11, 1), options);
+  december.find("Mes siguiente Punta del Este").props.onClick();
+  assert.equal(december.getChanged().getMonth(), 0);
+  assert.equal(december.getChanged().getFullYear(), 2027);
+  const last = controls(new Date(2036, 11, 1), options);
+  assert.equal(last.find("Mes siguiente Punta del Este").props.disabled, true);
+  assert.equal(last.find("Año siguiente Punta del Este").props.disabled, true);
 });
