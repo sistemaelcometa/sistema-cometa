@@ -14,8 +14,26 @@ test("reservation fields disable autocomplete and have per-opening names", () =>
   const text = modal.getText(ast);
   assert.ok(text.includes("crypto.randomUUID()"));
   assert.ok(text.includes('className="modal-form" autoComplete="off"'));
-  for (const name of ["unit", "guest", "from", "to", "total", "depositDate", "paid"]) {
+  for (const name of ["unit", "guest", "from", "to", "depositDate"]) {
     assert.ok(text.includes(`autoComplete="off" name={fieldName(\`${name}\`)}`));
+  }
+});
+
+test("reservation and deposit amounts do not expose names for remembered form values", () => {
+  const amounts = [];
+  function visit(node) {
+    if (ts.isJsxSelfClosingElement(node) && node.tagName.getText(ast) === "input") {
+      const attrs = node.attributes.properties;
+      const value = attrs.find(attr => attr.name?.text === "value")?.initializer?.getText(ast);
+      if (value === "{total}" || value === "{paid}") amounts.push(attrs);
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(modal);
+  assert.equal(amounts.length, 2);
+  for (const attrs of amounts) {
+    assert.equal(attrs.find(attr => ["name", "id", "list"].includes(attr.name?.text)), undefined);
+    assert.equal(attrs.find(attr => attr.name?.text === "autoComplete")?.initializer?.getText(ast), '"off"');
   }
 });
 
