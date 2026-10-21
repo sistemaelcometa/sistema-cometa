@@ -12,6 +12,21 @@ const family = ast.statements.find(node => ts.isFunctionDeclaration(node) && nod
 const effect = family.body.statements.find(node => ts.isExpressionStatement(node)
   && ts.isCallExpression(node.expression) && node.expression.expression.getText(ast) === "React.useEffect");
 
+test("closed settlement status uses the same red pill as an occupied unit", () => {
+  const helpers = ["C", "U", "W"].map(name => ast.statements.find(node =>
+    ts.isFunctionDeclaration(node) && node.name.text === name).getText(ast)).join("\n");
+  const statusLabel = family.body.statements.find(node => ts.isFunctionDeclaration(node)
+    && node.name.text === "familySettlementStatus").getText(ast);
+  const { closed, occupied, paid } = vm.runInNewContext(`${helpers}\n${statusLabel}\n({
+    closed: W({status:familySettlementStatus({statusKey:'closed',isCurrent:true})}),
+    occupied: U({status:'Alquilado'}), paid: W({status:'paid'})
+  });`, { i: { jsx: (tag, props) => props } });
+  assert.equal(closed.children, "Cerrada vigente");
+  assert.equal(closed.className, "status-pill danger");
+  assert.equal(closed.className, occupied.className);
+  assert.equal(paid.className, "status-pill success");
+});
+
 test("close history hides the version column while keeping six aligned columns", () => {
   let history;
   function find(node) {
