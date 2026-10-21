@@ -12,6 +12,31 @@ const family = ast.statements.find(node => ts.isFunctionDeclaration(node) && nod
 const effect = family.body.statements.find(node => ts.isExpressionStatement(node)
   && ts.isCallExpression(node.expression) && node.expression.expression.getText(ast) === "React.useEffect");
 
+test("close history hides the version column while keeping six aligned columns", () => {
+  let history;
+  function find(node) {
+    if (ts.isJsxElement(node) && node.openingElement.attributes.properties.some(attribute =>
+      ts.isJsxAttribute(attribute) && attribute.name.getText(ast) === "className"
+      && attribute.initializer?.text === "expense-list-panel family-settlement-history")) history = node;
+    ts.forEachChild(node, find);
+  }
+  find(family);
+  assert.ok(history);
+  const headers = [], cells = [];
+  function columns(node) {
+    if (ts.isJsxElement(node)) {
+      const tag = node.openingElement.tagName.getText(ast);
+      if (tag === "th") headers.push(node.children.map(child => child.getText(ast)).join(""));
+      if (tag === "td") cells.push(node.getText(ast));
+    }
+    ts.forEachChild(node, columns);
+  }
+  columns(history);
+  assert.deepEqual(headers, ["Período", "Total ARS", "Total USD", "Unidades", "Beneficiarios", "Estado"]);
+  assert.equal(cells.length, headers.length);
+  assert.ok(cells.every(cell => !cell.includes("row.version")));
+});
+
 function runEffect({ stale = true, fail = false } = {}) {
   const states = [], requests = [], fresh = { rows: [{ id: "saved-close" }], total: 1 };
   let dependencies, cleanup;
