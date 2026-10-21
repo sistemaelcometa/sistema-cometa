@@ -3150,10 +3150,25 @@ button:disabled {
   font-weight: 800;
 }
 
-.pde-legend span {
+.pde-legend label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.pde-legend input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: var(--brand-blue);
+}
+
+.pde-legend label.is-hidden {
+  opacity: 0.55;
 }
 
 .pde-legend i {
@@ -3206,6 +3221,14 @@ button:disabled {
   z-index: 0;
   border-top: 2px solid #111;
   transform: translateY(-50%);
+}
+
+.pde-day-lanes.single-lane {
+  grid-template-rows: 1fr;
+}
+
+.pde-day-lanes.single-lane::before {
+  display: none;
 }
 
 .pde-unit-lane {
@@ -3363,23 +3386,38 @@ button:disabled {
   color: #8b1e1e;
 }
 
-.availability-result {
+.pde-availability-results {
   display: grid;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fbfcfb;
+  gap: 20px;
 }
 
-.availability-result span {
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 800;
+.pde-availability-unit {
+  min-width: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
-.availability-result strong {
-  font-size: 1.1rem;
+.pde-availability-unit h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.pde-availability-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.pde-availability-table th,
+.pde-availability-table td {
+  padding: 10px 4px;
+  font-size: 0.82rem;
+}
+
+.pde-availability-table th:last-child,
+.pde-availability-table td:last-child {
+  width: 25%;
+  text-align: right;
 }
 
 .pde-reservation-summary {
@@ -3495,7 +3533,7 @@ button:disabled {
 
 @media (max-width: 1080px) {
   .pde-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .pde-balance-panel {
