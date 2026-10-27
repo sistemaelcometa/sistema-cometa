@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import test from "node:test";
 import vm from "node:vm";
+import { parsePdeExpenseAmount } from "../lib/pde-expense-amounts.ts";
 
 const require = createRequire(import.meta.url), ts = require("typescript");
 const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
@@ -27,7 +28,7 @@ for (const attachment of [null, { name: "comprobante.pdf" }]) {
     ]);
     vm.runInNewContext(`${functionText("fieldName")}\n${functionText("submit")}\nsubmit({preventDefault(){},currentTarget:{}});`, {
       fieldScope: "test", units: ["601"], FormData: class { get(key) { return values.get(key); } },
-      g: value => Number(String(value).replaceAll(".", "")), onSave: value => saved.push(value),
+      parsePdeExpenseAmount, onSave: value => saved.push(value),
     });
     assert.equal(saved.length, 1);
     assert.equal(saved[0].unit, "General");
