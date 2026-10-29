@@ -3374,6 +3374,31 @@ button:disabled {
   margin-top: 18px;
 }
 
+.pde-income-fields {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.pde-misc-income-modal [role="tablist"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 100%;
+}
+
+.pde-income-history {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  min-width: 0;
+}
+
+.pde-income-history th {
+  color: var(--brand-blue);
+}
+
 .danger-outline-button {
   border-color: #d59a9a;
   color: #8b1e1e;
