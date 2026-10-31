@@ -50,5 +50,5 @@ test('PDE balance and report fallback include miscellaneous incomes once without
   const chart=declarations(reports).find(item=>item.name.getText(ast)==='chartData');
   const data=vm.runInNewContext(chart.initializer.getText(ast),{remoteReport:null,localPeriodRows:rows,outcomes:0});
   assert.equal(data.rentIncome,0);assert.equal(data.expenseIncome,50.25);
-  assert.ok(calendar.getText(ast).includes('>Historial de gastos</button><button className="secondary-button compact-action" type="button" onClick={()=>setShowMiscIncomes(true)}>Ingresos varios</button>'));
+  assert.ok(calendar.getText(ast).includes('>Registrar gasto</button><button className="secondary-button compact-action success-outline-button" type="button" onClick={()=>setShowMiscIncomes(true)}>Registrar ingreso</button>'));
 });

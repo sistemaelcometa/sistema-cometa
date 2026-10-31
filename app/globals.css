@@ -3383,7 +3383,8 @@ button:disabled {
   border: 0;
 }
 
-.pde-misc-income-modal [role="tablist"] {
+.pde-misc-income-modal [role="tablist"],
+.pde-expense-modal [role="tablist"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   max-width: 100%;
 }
@@ -3402,6 +3403,18 @@ button:disabled {
 .danger-outline-button {
   border-color: #d59a9a;
   color: #8b1e1e;
+}
+
+.success-outline-button {
+  border-color: #a8c99b;
+  color: #326329;
+}
+
+.success-outline-button:hover,
+.pde-layout .success-outline-button:hover {
+  border-color: #7da86f;
+  background: #f1f8ed;
+  color: #326329;
 }
 
 .danger-outline-button:hover,
