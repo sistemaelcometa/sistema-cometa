@@ -68,6 +68,27 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
     await rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units.expired]);
     await assert.rejects(rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units['last-day']]),/contrato activo/);
     await assert.rejects(rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units.future]),/contrato activo/);
+
+    // Existing pending dates are corrected once, while finalized history stays intact.
+    await rows("update urban_leases set next_adjustment_date='2026-11-15' where unit_id in ($1,$2)",[units.current,units.future]);
+    await rows("update urban_leases set status='finalized', next_adjustment_date='2026-10-15' where unit_id=$1",[units.expired]);
+    const datesBefore = await rows('select id,start_date,end_date,current_amount,currency,monthly_due_day from urban_leases order by id');
+    const adjustmentMigration = await read('supabase/migrations/071_urban_lease_adjustments_on_month_first.sql');
+    await db.exec(adjustmentMigration); await db.exec(adjustmentMigration);
+    assert.deepEqual(await rows('select id,start_date,end_date,current_amount,currency,monthly_due_day from urban_leases order by id'),datesBefore);
+    const adjusted = await rows("select next_adjustment_date::text as date from urban_leases where unit_id in ($1,$2)",[units.current,units.future]);
+    assert.ok(adjusted.every(row=>row.date==='2026-11-01'));
+    assert.equal((await rows("select next_adjustment_date::text as date from urban_leases where unit_id=$1",[units.expired]))[0].date,'2026-10-15');
+    assert.equal((await rows("select count(*)::int as n from audit_logs where action='urban_lease_adjustment_day_normalized'"))[0].n,2);
+
+    // The real editing RPC and direct inserts both respect the database rule.
+    await db.exec(fn(await read('supabase/migrations/008_urban_lease_lifecycle_rpcs.sql'),'update_active_urban_lease'));
+    const edited = (await rows("select (update_active_urban_lease($1,$2,lease_next_adjustment_date=>'2027-03-27')).next_adjustment_date::text as date",[org,units.current]))[0];
+    assert.equal(edited.date,'2027-03-01');
+    const inserted = (await rows(`insert into urban_leases(organization_id,unit_id,primary_tenant_contact_id,start_date,end_date,current_amount,currency,monthly_due_day,next_adjustment_date,status)
+      values($1,$2,$3,'2030-01-15','2031-01-14',100,'ARS',10,'2030-05-15','upcoming')
+      returning next_adjustment_date::text as date`,[org,units.current,tenant]))[0];
+    assert.equal(inserted.date,'2030-05-01');
   } finally { await db.close(); }
 });
 
