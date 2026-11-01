@@ -4,18 +4,19 @@ import { createRequire } from "node:module";
 import test from "node:test";
 import vm from "node:vm";
 import { roundPaymentAmount } from "../lib/urban-payment-amounts.ts";
+import { argentinaDay as realArgentinaDay } from "../lib/argentina-day.ts";
 
 const require = createRequire(import.meta.url), ts = require("typescript");
 const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 const ast = ts.createSourceFile("page.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const functions = new Map(ast.statements.filter(ts.isFunctionDeclaration).map(node => [node.name.text, node]));
 const overview = functions.get("O");
-const helpers = ["T", "x", "previousExpensePeriod", "chargeTotal", "E"].map(name => functions.get(name).getText(ast)).join("\n");
+const helpers = ["T", "x", "previousExpensePeriod", "chargeTotal", "E", "monthlyRentUpdateDate", "rentUpdateDateFor", "leaseUpdateDates", "normalizeDateInput", "parseDateParts", "daysInMonth", "addMonths"].map(name => functions.get(name).getText(ast)).join("\n");
 const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 function pending(props, date = "2026-10-15T12:00:00-03:00") {
   return vm.runInNewContext(`${helpers}\nfunction pending(${overview.parameters.map(node => node.getText(ast)).join(",")}){${overview.body.statements[0].getText(ast)}return {period,overdueCharges,unliquidatedBuildings,pendingReviewCount}}\npending(props)`, {
-    props: { units: [], ...props }, p: months, roundPaymentAmount,
+    props: { units: [], ...props }, p: months, roundPaymentAmount, argentinaDay: () => realArgentinaDay(new Date(date)),
     React: { useState: value => [value, () => {}], useMemo: callback => callback() },
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [date])); } },
   });
@@ -58,4 +59,53 @@ test("overview is clear when charges are covered and expenses calculated", () =>
 
 test("January expense alerts refer to December of the prior year", () => {
   assert.equal(pending({}, "2027-01-15T12:00:00-03:00").period, "Diciembre 2026");
+});
+
+function updateDates(unit, month) {
+  return vm.runInNewContext(`${helpers}
+    ({overview:monthlyRentUpdateDate(unit,month),billing:rentUpdateDateFor(unit,month+'-'+String(unit.dueDay).padStart(2,'0'))})`,{unit,month});
+}
+
+const lease={id:"mauro",status:"Alquilado",dueDay:10,leaseStart:"2026-03-15",leaseEnd:"2028-03-14",updateFrequencyMonths:4,nextUpdate:"2026-11-15"};
+
+test("an adjustment after the monthly due date does not flag that month's rent in either view",()=>{
+  const november=updateDates(lease,"2026-11");
+  assert.equal(november.overview,"");assert.equal(november.billing,"");
+  const december=updateDates(lease,"2026-12");
+  assert.equal(december.overview,"2026-11-15");assert.equal(december.billing,december.overview);
+});
+
+test("adjustments before or on the due date and carried-over adjustments agree in both views",()=>{
+  for(const nextUpdate of ["2026-11-01","2026-11-10","2026-10-15"]){
+    const result=updateDates({...lease,nextUpdate},"2026-11");
+    assert.equal(result.overview,result.billing);assert.ok(result.overview);
+  }
+  const january=updateDates({...lease,nextUpdate:"2026-12-15"},"2027-01");
+  assert.equal(january.overview,"2026-12-15");assert.equal(january.billing,january.overview);
+});
+
+test("inactive contracts, dates outside the lease and already advanced updates never flag rent",()=>{
+  for(const unit of [
+    {...lease,status:"Disponible"}, {...lease,nextUpdate:""},
+    {...lease,nextUpdate:"2026-12-15"}, {...lease,nextUpdate:"2028-04-01"},
+    {...lease,leaseEnd:"2026-11-05",nextUpdate:"2026-11-01"},
+    {...lease,leaseStart:"2026-11-20",nextUpdate:"2026-11-20"},
+  ]){
+    const result=updateDates(unit,"2026-11");
+    assert.equal(result.overview,"");assert.equal(result.billing,"");
+  }
+});
+
+test("overview pending adjustments use the rent due date and retain overdue adjustments",()=>{
+  for(const [nextUpdate,count] of [["2026-11-15",0],["2026-11-10",1],["2026-10-15",1],["2026-12-15",0]]){
+    const result=pending({buildings:[{id:"building",hasExpenses:false}],units:[{...lease,buildingId:"building",nextUpdate}]},"2026-11-01T12:00:00-03:00");
+    assert.equal(result.pendingReviewCount,count);
+  }
+});
+
+test("cards, department amount and collection rows call the shared adjustment rule",()=>{
+  assert.match(overview.getText(ast),/updateDue=!!monthlyRentUpdateDate\(unit,o\)/);
+  const collection=functions.get("k").getText(ast);
+  assert.match(collection,/return rentUpdateDateFor\(unit, charge.dueDate\)/);
+  assert.match(source,/amountOutdated=!!monthlyRentUpdateDate\(e,argentinaDay\(\).slice\(0,7\)\)/);
 });
