@@ -23,6 +23,8 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
     for (const name of ['is_org_member','has_org_role']) await db.exec(fn(schema,name));
     const migration = await read('supabase/migrations/069_urban_availability_after_lease_end.sql');
     await db.exec(migration); await db.exec(migration);
+    const tenantMigration = await read('supabase/migrations/070_urban_tenant_status_after_lease_end.sql');
+    await db.exec(tenantMigration); await db.exec(tenantMigration);
     await rows("select set_config('test.actor',$1,false)",[actor]);
     await rows('insert into auth.users values($1)',[actor]);
     await rows("insert into profiles(id,email) values($1,'test@local')",[actor]);
@@ -38,6 +40,8 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
       await rows(`insert into urban_leases(organization_id,unit_id,primary_tenant_contact_id,start_date,end_date,current_amount,currency,monthly_due_day,status)
         values($1,$2,$3,${today} + ${name==='future'?10:-60},${today} + ${offset},950000,'ARS',10,'active')`,[org,unit,tenant]);
     }
+    const expiredTenant = (await rows("insert into contacts(organization_id,first_name,is_tenant) values($1,'Anterior',true) returning id",[org]))[0].id;
+    await rows('update urban_leases set primary_tenant_contact_id=$1 where unit_id=$2',[expiredTenant,units.expired]);
     const before = await rows('select * from urban_leases order by id');
     const result = await rows('select * from get_urban_structure($1)',[org]);
     const byName = Object.fromEntries(result.map(row=>[row.unit_name,row]));
@@ -46,6 +50,19 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
     assert.ok(byName.current.lease_id); assert.ok(byName.future.lease_id);
     assert.equal(byName.maintenance.unit_status,'maintenance'); assert.equal(byName.archived,undefined);
     assert.deepEqual(await rows('select * from get_urban_structure($1)',[other]),[]);
+    const tenants = await rows('select * from get_urban_tenants($1)',[org]);
+    const expiredRow = tenants.find(row=>row.id===expiredTenant);
+    assert.equal(Number(expiredRow.active_lease_count),0);
+    assert.equal(Number(expiredRow.lease_count),1);
+    assert.equal(expiredRow.current_units,null);
+    assert.ok(expiredRow.last_lease_end);
+    const currentTenant = tenants.find(row=>row.id===tenant);
+    assert.equal(Number(currentTenant.active_lease_count),3);
+    assert.equal(Number(currentTenant.lease_count),5);
+    assert.ok(currentTenant.current_units.includes('last-day'));
+    assert.ok(currentTenant.current_units.includes('future'));
+    assert.ok(!currentTenant.current_units.includes('maintenance'));
+    assert.deepEqual(await rows('select * from get_urban_tenants($1)',[other]),[]);
     assert.deepEqual(await rows('select * from urban_leases order by id'),before);
     assert.equal((await rows('select count(*)::int as n from urban_charges'))[0].n,0);
     await rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units.expired]);
