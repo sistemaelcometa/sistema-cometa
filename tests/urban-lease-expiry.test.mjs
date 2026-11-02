@@ -108,6 +108,39 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
       values($1,$2,$3,'2030-01-15','2031-01-14',100,'ARS',10,'2030-05-15','upcoming')
       returning next_adjustment_date::text as date`,[org,units.current,tenant]))[0];
     assert.equal(inserted.date,'2030-05-01');
+
+    // Contract details leave the department card on expiry and survive new tenants.
+    await rows("update urban_units set notes='Importe inicial $120.000' where id=$1",[units.expired]);
+    await rows("update urban_units set notes='Detalle del contrato vigente' where id=$1",[units['last-day']]);
+    await rows("update urban_leases set notes='Observacion del contrato' where unit_id=$1",[units['last-day']]);
+    const finances=await rows('select id,start_date,end_date,current_amount,currency,status from urban_leases order by id');
+    const detailMigration=await read('supabase/migrations/073_preserve_contract_details_after_expiry.sql');
+    await db.exec(detailMigration);await db.exec(detailMigration);
+    assert.deepEqual(await rows('select id,start_date,end_date,current_amount,currency,status from urban_leases order by id'),finances);
+    let structure=await rows('select * from get_urban_structure($1)',[org]);
+    assert.equal(structure.find(row=>row.unit_id===units.expired).unit_notes,null);
+    assert.equal(structure.find(row=>row.unit_id===units['last-day']).unit_notes,'Detalle del contrato vigente');
+    let past=await rows('select * from get_urban_lease_history($1)',[org]);
+    assert.ok(past.find(row=>row.unit_id===units.expired).notes.includes('Importe inicial $120.000'));
+    assert.ok(past.find(row=>row.unit_id===units['last-day']).notes.includes('Observacion del contrato\n\nDetalle: Detalle del contrato vigente'));
+    await rows("select update_urban_unit_details($1,$2,null,null,'Detalle actualizado')",[org,units['last-day']]);
+    await rows(`update urban_leases set end_date=${today}-1 where unit_id=$1`,[units['last-day']]);
+    structure=await rows('select * from get_urban_structure($1)',[org]);
+    assert.equal(structure.find(row=>row.unit_id===units['last-day']).unit_notes,null);
+    past=await rows('select * from get_urban_lease_history($1)',[org]);
+    assert.ok(past.find(row=>row.unit_id===units['last-day']).notes.includes('Detalle actualizado'));
+    await rows("select update_urban_unit_details($1,$2,null,null,'Nota nueva del departamento disponible')",[org,units['last-day']]);
+    await db.exec(detailMigration);
+    structure=await rows('select * from get_urban_structure($1)',[org]);
+    assert.equal(structure.find(row=>row.unit_id===units['last-day']).unit_notes,'Nota nueva del departamento disponible');
+    const newLease=(await rows(`insert into urban_leases(organization_id,unit_id,primary_tenant_contact_id,start_date,end_date,current_amount,currency,monthly_due_day,status)
+      values($1,$2,$3,${today},${today}+365,600000,'ARS',10,'active') returning id`,[org,units.expired,tenant]))[0].id;
+    structure=await rows('select * from get_urban_structure($1)',[org]);
+    assert.equal(structure.find(row=>row.unit_id===units.expired).unit_notes,null);
+    await rows("select update_urban_unit_details($1,$2,null,null,'Detalle del nuevo contrato')",[org,units.expired]);
+    past=await rows('select * from get_urban_lease_history($1)',[org]);
+    assert.equal(past.find(row=>row.id===newLease).notes,'Detalle del nuevo contrato');
+    assert.ok(past.find(row=>row.unit_id===units.expired&&row.id!==newLease).notes.includes('Importe inicial $120.000'));
   } finally { await db.close(); }
 });
 
