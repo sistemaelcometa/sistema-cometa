@@ -25,6 +25,9 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
     await db.exec(migration); await db.exec(migration);
     const tenantMigration = await read('supabase/migrations/070_urban_tenant_status_after_lease_end.sql');
     await db.exec(tenantMigration); await db.exec(tenantMigration);
+    await db.exec('create role anon;create role authenticated;');
+    const historyMigration = await read('supabase/migrations/072_urban_department_contract_history.sql');
+    await db.exec(historyMigration); await db.exec(historyMigration);
     await rows("select set_config('test.actor',$1,false)",[actor]);
     await rows('insert into auth.users values($1)',[actor]);
     await rows("insert into profiles(id,email) values($1,'test@local')",[actor]);
@@ -64,19 +67,35 @@ test('Argentina midnight releases yesterday contracts while today stays occupied
     assert.ok(!currentTenant.current_units.includes('maintenance'));
     assert.deepEqual(await rows('select * from get_urban_tenants($1)',[other]),[]);
     assert.deepEqual(await rows('select * from urban_leases order by id'),before);
+    const history = await rows('select * from get_urban_lease_history($1)',[org]);
+    const previousContract = history.find(row=>row.unit_id===units.expired);
+    assert.equal(previousContract.status,'Finalizado');
+    assert.equal(previousContract.tenant_name,'Anterior');
+    assert.equal(Number(previousContract.amount),950000);
+    assert.ok(previousContract.start_date);assert.ok(previousContract.end_date);
+    assert.equal(history.find(row=>row.unit_id===units['last-day']).status,'Activo');
+    assert.equal(history.find(row=>row.unit_id===units.future).status,'Próximo');
+    assert.deepEqual(await rows('select * from get_urban_lease_history($1)',[other]),[]);
+    assert.deepEqual(await rows('select * from urban_leases order by id'),before);
     assert.equal((await rows('select count(*)::int as n from urban_charges'))[0].n,0);
     await rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units.expired]);
     await assert.rejects(rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units['last-day']]),/contrato activo/);
     await assert.rejects(rows("select update_urban_unit_details($1,$2,null,'available',null)",[org,units.future]),/contrato activo/);
+    for(const [status,offset] of [['finalized',100],['rescinded',200]]){
+      await rows(`insert into urban_leases(organization_id,unit_id,primary_tenant_contact_id,start_date,end_date,current_amount,currency,monthly_due_day,status)
+        values($1,$2,$3,${today}-500,${today}-${offset},123,'ARS',10,$4)`,[org,units.current,expiredTenant,status]);
+    }
+    const unitHistory=(await rows('select * from get_urban_lease_history($1)',[org])).filter(row=>row.unit_id===units.current);
+    assert.deepEqual(unitHistory.map(row=>row.status),['Activo','Finalizado','Rescindido']);
 
     // Existing pending dates are corrected once, while finalized history stays intact.
-    await rows("update urban_leases set next_adjustment_date='2026-11-15' where unit_id in ($1,$2)",[units.current,units.future]);
+    await rows("update urban_leases set next_adjustment_date='2026-11-15' where unit_id in ($1,$2) and status='active'",[units.current,units.future]);
     await rows("update urban_leases set status='finalized', next_adjustment_date='2026-10-15' where unit_id=$1",[units.expired]);
     const datesBefore = await rows('select id,start_date,end_date,current_amount,currency,monthly_due_day from urban_leases order by id');
     const adjustmentMigration = await read('supabase/migrations/071_urban_lease_adjustments_on_month_first.sql');
     await db.exec(adjustmentMigration); await db.exec(adjustmentMigration);
     assert.deepEqual(await rows('select id,start_date,end_date,current_amount,currency,monthly_due_day from urban_leases order by id'),datesBefore);
-    const adjusted = await rows("select next_adjustment_date::text as date from urban_leases where unit_id in ($1,$2)",[units.current,units.future]);
+    const adjusted = await rows("select next_adjustment_date::text as date from urban_leases where unit_id in ($1,$2) and status='active'",[units.current,units.future]);
     assert.ok(adjusted.every(row=>row.date==='2026-11-01'));
     assert.equal((await rows("select next_adjustment_date::text as date from urban_leases where unit_id=$1",[units.expired]))[0].date,'2026-10-15');
     assert.equal((await rows("select count(*)::int as n from audit_logs where action='urban_lease_adjustment_day_normalized'"))[0].n,2);
