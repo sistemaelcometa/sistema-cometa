@@ -2907,6 +2907,40 @@ button:disabled {
   color: var(--muted-foreground);
 }
 
+.cometa-workspace { min-width: 0; grid-template-columns: minmax(0,1fr); }
+.cometa-workspace > .panel,
+.cometa-currency-panels { min-width: 0; }
+.cometa-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+.cometa-filters .field { flex: 1 1 150px; min-width: 0; }
+.cometa-currency-panels { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,400px),1fr)); gap: 16px; }
+.cometa-currency-panel { min-width: 0; }
+.cometa-currency-panel h3,.cometa-currency-panel h4 { margin: 0 0 16px; }
+.cometa-currency-panel h4 { margin-top: 22px; }
+.cometa-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.cometa-totals > div { display: grid; gap: 6px; overflow-wrap: anywhere; }
+.cometa-income { color: #326329; }
+.cometa-expense { color: #a63131; }
+.cometa-category-chart { display: grid; gap: 16px; }
+.cometa-category-row > div:first-child { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.cometa-category-track { height: 12px; border-radius: 6px; overflow: hidden; background: #edf1f0; }
+.cometa-category-track > span { display: block; height: 100%; border-radius: inherit; }
+.cometa-movements-table th { color: var(--brand-blue); }
+.cometa-invoice-upload { display: grid; gap: 12px; padding: 14px; margin-bottom: 16px; border: 1px dashed #b4cbd9; border-radius: 8px; background: #f8fbfd; overflow-wrap: anywhere; }
+.cometa-invoice-upload button { display: inline-flex; align-items: center; gap: 6px; }
+.cometa-form-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
+.cometa-category-help { margin: 0; color: var(--muted-foreground); }
+.cometa-warning-line { display: block; margin-top: 6px; }
+@media (max-width: 600px) {
+  .cometa-workspace .page-header { display: grid; gap: 14px; }
+  .cometa-totals { grid-template-columns: 1fr; }
+  .cometa-movement-modal .form-grid { grid-template-columns: minmax(0,1fr); }
+}
+
 .department-history-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
