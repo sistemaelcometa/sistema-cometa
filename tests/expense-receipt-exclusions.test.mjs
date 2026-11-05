@@ -7,7 +7,7 @@ import test from 'node:test';
 const require=createRequire(import.meta.url),ts=require('typescript');
 const source=await readFile(new URL('../app/page.tsx',import.meta.url),'utf8');
 const ast=ts.createSourceFile('page.tsx',source,ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
-const code=['expenseReceiptLines','L','h','b','expenseCollectionMonth','expenseRentPeriodLabel','addMonths','periodToDate','normalizeDateInput','parseDateParts','daysInMonth','T'].map(name=>ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name.text===name).getText(ast)).join('\n');
+const code=['expenseReceiptLines','L','h','g','b','expenseCollectionMonth','expenseRentPeriodLabel','monthlyRentUpdateDate','rentUpdateDateFor','pendingLeaseUpdateDates','firstOfMonthDate','G','addMonths','periodToDate','normalizeDateInput','parseDateParts','daysInMonth','T'].map(name=>ast.statements.find(n=>ts.isFunctionDeclaration(n)&&n.name.text===name).getText(ast)).join('\n');
 export const calculation={
  buildingName:'PELLEGRINI',period:'Octubre 2026',dueDates:['10/11/2026','20/11/2026','21/11/2026'],
  expenses:[
@@ -23,6 +23,35 @@ export function receiptContext(){
  vm.runInContext(code,context);
  return {context,get blob(){return blob},get download(){return download}};
 }
+
+test('PDF uses the live contract and warns about pending updates for the collection month',async()=>{
+ const unit={id:'studio',status:'Alquilado',leaseStart:'2026-03-15',leaseEnd:'2028-03-14',nextUpdate:'2026-12-01',updateFrequencyMonths:4,dueDay:10,leaseAmount:'2.000',currency:'ARS'};
+ for(const [period,pending] of [['Octubre 2026',false],['Noviembre 2026',true],['Diciembre 2026',true],['Marzo 2027',true]]){
+  const result=receiptContext();result.context.L({...calculation,period},calculation.units[4],unit);
+  const pdf=Buffer.from(await result.blob.arrayBuffer()).toString('latin1');
+  assert.equal(pdf.includes('Alquiler pendiente de actualización'),pending);
+  assert.equal(pdf.includes('(A definir)'),pending);
+  assert.equal(pdf.includes('($ 2.000,00)'),!pending);
+  assert.equal(pdf.includes('($ 2.080,00)'),!pending);
+  assert.ok(pdf.includes('($ 80,00)'));
+  assert.ok(pdf.includes('Vencimientos expensas'));
+  assert.ok(!pdf.includes('($ 1.080,00)'));
+ }
+ // Once the update is saved, the new amount and following scheduled date are used.
+ const result=receiptContext();result.context.L({...calculation,period:'Noviembre 2026'},calculation.units[4],{...unit,nextUpdate:'2027-04-01',leaseAmount:'3.000'});
+ const pdf=Buffer.from(await result.blob.arrayBuffer()).toString('latin1');
+ assert.ok(!pdf.includes('Alquiler pendiente de actualización'));
+ assert.ok(pdf.includes('($ 3.080,00)'));
+});
+
+test('pending rent in dollars does not produce a mixed-currency numeric total',async()=>{
+ const result=receiptContext();result.context.L(calculation,calculation.units[4],{status:'Alquilado',leaseStart:'2026-01-01',leaseEnd:'2027-12-31',nextUpdate:'2026-11-01',dueDay:10,currency:'USD',leaseAmount:'500'});
+ const pdf=Buffer.from(await result.blob.arrayBuffer()).toString('latin1');
+ assert.ok(pdf.includes('Alquiler pendiente de actualización'));
+ assert.ok(pdf.includes('(A definir)'));
+ assert.ok(!pdf.includes('USD 500,00'));
+ assert.ok(pdf.includes('($ 80,00)'));
+});
 
 test('receipts omit excluded costs and distribute each cost over its own included surface',()=>{
  const {context}=receiptContext(),lines=calculation.units.map(unit=>context.expenseReceiptLines(calculation,unit));
