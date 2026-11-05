@@ -5,6 +5,7 @@ import {Camera,Download,FileUp,Trash2} from "lucide-react";
 import {CometaReceiptArchive,CometaAttachReceipt} from "./cometa-receipt-archive";
 import {CometaSuppliers,useCometaSuppliers} from "./cometa-suppliers";
 import type {CometaSupplier} from "./cometa-suppliers";
+import {CometaGrain} from "./cometa-grain";
 import {useActiveMembership} from "./auth-gate";
 import {supabase} from "@/lib/supabase/client";
 import {argentinaDay} from "@/lib/argentina-day";
@@ -82,8 +83,7 @@ export function CometaWorkspace(){
  return <div className="page-stack cometa-workspace">
   <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div></header>
   <nav className="segmented-control cometa-section-tabs" aria-label="Secciones de El Cometa">{[{id:"movements",label:"Caja"},{id:"harvest",label:"Registro de cosecha"},{id:"suppliers",label:"Proveedores"},{id:"storage",label:"Acopios"}].map(item=><button key={item.id} type="button" className={section===item.id?"active":""} aria-pressed={section===item.id} onClick={()=>{setSection(item.id);setShowDates(false);if(item.id==="suppliers")supplierData.reload()}}>{item.label}</button>)}</nav>
-  {section==="harvest"&&<section className="panel" aria-label="Registro de cosecha"><h3>Registro de cosecha</h3><p className="empty-state">Sección en preparación.</p></section>}
-  {section==="storage"&&<section className="panel" aria-label="Acopios"><h3>Acopios</h3><p className="empty-state">Sección en preparación.</p></section>}
+  {(section==="harvest"||section==="storage")&&organization&&<CometaGrain key={organization+section} organization={organization} canWrite={canWrite} view={section}/>}
   {section==="suppliers"&&organization&&<CometaSuppliers key={organization} organization={organization} canWrite={canWrite} {...supplierData} onChanged={supplierData.reload}/>}
   {section==="movements"&&<>
   <div className="inline-actions cometa-cash-actions"><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button>{canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}</div>
