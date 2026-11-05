@@ -11,7 +11,7 @@ const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8
 const ast = ts.createSourceFile("page.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
 const functions = new Map(ast.statements.filter(ts.isFunctionDeclaration).map(node => [node.name.text, node]));
 const overview = functions.get("O");
-const helpers = ["T", "x", "previousExpensePeriod", "chargeTotal", "E", "monthlyRentUpdateDate", "rentUpdateDateFor", "leaseUpdateDates", "normalizeDateInput", "parseDateParts", "daysInMonth", "addMonths", "G", "firstOfMonthDate"].map(name => functions.get(name).getText(ast)).join("\n");
+const helpers = ["T", "x", "previousExpensePeriod", "chargeTotal", "E", "monthlyRentUpdateDate", "rentUpdateDateFor", "leaseUpdateDates", "normalizeDateInput", "parseDateParts", "daysInMonth", "addMonths", "G", "firstOfMonthDate", "pendingLeaseUpdateDates"].map(name => functions.get(name).getText(ast)).join("\n");
 const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 function pending(props, date = "2026-10-15T12:00:00-03:00") {
@@ -118,4 +118,29 @@ test("new and subsequent adjustment schedules use day one without shifting the a
   assert.deepEqual(schedule("2026-03-15","2026-06-30",4),[]);
   for(const frequency of [0,-1,1.5])assert.deepEqual(schedule("2026-03-15","2027-04-14",frequency),[]);
   assert.equal(vm.runInNewContext(`${helpers};G("2026-11-15",4)`),"2027-03-01");
+});
+
+test("a postponed four-month adjustment stays anchored to December instead of the original lease start",()=>{
+ const shifted={...lease,nextUpdate:"2026-12-01"};
+ assert.deepEqual(Array.from(vm.runInNewContext(`${helpers};pendingLeaseUpdateDates(unit)`,{unit:shifted})),["2026-12-01","2027-04-01","2027-08-01","2027-12-01"]);
+ for(const [month,expected] of [["2026-11",""],["2026-12","2026-12-01"],["2027-03","2026-12-01"],["2027-04","2027-04-01"],["2027-07","2027-04-01"],["2027-08","2027-08-01"]]){
+  const result=updateDates(shifted,month);assert.equal(result.overview,expected);assert.equal(result.billing,expected);
+ }
+ const advanced={...shifted,nextUpdate:"2027-04-01"};
+ assert.deepEqual(Array.from(vm.runInNewContext(`${helpers};pendingLeaseUpdateDates(unit)`,{unit:advanced})),["2027-04-01","2027-08-01","2027-12-01"]);
+});
+
+test("actual amount-update form offers the postponed dates and advances December to April",()=>{
+ const unit={...lease,nextUpdate:"2026-12-01",leaseAmount:"$ 457.000",currency:"ARS"};
+ const state=value=>[typeof value==="function"?value():value,()=>{}],jsx=(type,props)=>({type,props}),saved=[];
+ const view=vm.runInNewContext(`${helpers}\n${functions.get("N").getText(ast)};N({unit,onClose(){},onSave:(...args)=>saved.push(args)})`,{
+  unit,saved,r:{useState:state},React:{useState:state},crypto:{randomUUID:()=> "test"},i:{jsx,jsxs:jsx},ModalShell(){},H(){},Qe:()=> "Cuatrimestral",_:value=>value,formatAmountInputValue:value=>value,formatAmountInput(){},formatCurrency:(value,currency)=>currency+" "+value,g:value=>Number(value),
+  FormData:class{get(name){return name==="currency"?"ARS":457000}},
+ });
+ const nodes=[];function walk(node){if(!node||typeof node!=="object")return;if(Array.isArray(node)){node.forEach(walk);return}nodes.push(node);walk(node.props?.children)}walk(view);
+ const selector=nodes.find(node=>node.type==="select"&&node.props.name==="nextUpdate");
+ assert.equal(selector.props.value,"2026-12-01");
+ assert.deepEqual(Array.from(selector.props.children,item=>item.props.value),["2026-12-01","2027-04-01","2027-08-01","2027-12-01"]);
+ view.props.asForm({preventDefault(){},currentTarget:{}});
+ assert.equal(saved[0][1],"2027-04-01");
 });
