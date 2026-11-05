@@ -2943,7 +2943,8 @@ button:disabled {
 .cometa-movements-table th { color: var(--brand-blue); }
 .cometa-suppliers-table th { color: var(--brand-blue); }
 .cometa-suppliers-table { min-width: 600px; }
-.cometa-section-tabs { justify-self: start; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.cometa-section-tabs { justify-self: start; max-width: 100%; grid-template-columns: repeat(4,minmax(0,1fr)); }
+.cometa-cash-actions { justify-content: flex-end; }
 .cometa-invoice-upload { display: grid; gap: 12px; padding: 14px; margin-bottom: 16px; border: 1px dashed #b4cbd9; border-radius: 8px; background: #f8fbfd; overflow-wrap: anywhere; }
 .cometa-invoice-upload button { display: inline-flex; align-items: center; gap: 6px; }
 .cometa-form-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
@@ -2955,6 +2956,7 @@ button:disabled {
 .cometa-cleanup-section { border-top: 1px solid var(--border); padding-top: 18px; }
 .cometa-export-list .history-line-card { grid-template-columns: minmax(0,1fr); overflow-wrap: anywhere; }
 @media (max-width: 600px) {
+  .cometa-section-tabs { width: 100%; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .cometa-workspace .page-header { display: grid; gap: 14px; }
   .cometa-totals { grid-template-columns: 1fr; }
   .cometa-movement-modal .form-grid { grid-template-columns: minmax(0,1fr); }
