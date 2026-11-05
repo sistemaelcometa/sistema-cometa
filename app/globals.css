@@ -2945,6 +2945,17 @@ button:disabled {
   .cometa-movement-modal .form-grid { grid-template-columns: minmax(0,1fr); }
 }
 
+.lease-amount-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+.lease-amount-help { color: var(--muted-foreground); }
+.lease-adjustment-history th { color: var(--brand-blue); }
+.lease-initial-amount { background: #edf5fa; }
+
 .department-history-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
