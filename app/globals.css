@@ -2941,6 +2941,9 @@ button:disabled {
 .cometa-category-track { height: 12px; border-radius: 6px; overflow: hidden; background: #edf1f0; }
 .cometa-category-track > span { display: block; height: 100%; border-radius: inherit; }
 .cometa-movements-table th { color: var(--brand-blue); }
+.cometa-suppliers-table th { color: var(--brand-blue); }
+.cometa-suppliers-table { min-width: 600px; }
+.cometa-section-tabs { justify-self: start; grid-template-columns: repeat(2,minmax(0,1fr)); }
 .cometa-invoice-upload { display: grid; gap: 12px; padding: 14px; margin-bottom: 16px; border: 1px dashed #b4cbd9; border-radius: 8px; background: #f8fbfd; overflow-wrap: anywhere; }
 .cometa-invoice-upload button { display: inline-flex; align-items: center; gap: 6px; }
 .cometa-form-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
