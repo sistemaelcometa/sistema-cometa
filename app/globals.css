@@ -2911,12 +2911,23 @@ button:disabled {
 .cometa-workspace > .panel,
 .cometa-currency-panels { min-width: 0; }
 .cometa-filters {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0,1.4fr) repeat(3,minmax(0,1fr)) minmax(0,1.3fr);
   align-items: end;
   gap: 12px;
 }
-.cometa-filters .field { flex: 1 1 150px; min-width: 0; }
+.cometa-filters .field { min-width: 0; }
+.cometa-filters input,.cometa-filters select { min-height: 44px; }
+.cometa-date-filter { position: relative; }
+.cometa-date-toggle { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; min-height: 44px; white-space: nowrap; overflow: hidden; font-size: 13px; }
+.cometa-date-toggle > span { flex-shrink: 0; }
+.cometa-date-toggle > .cometa-date-value { min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
+.cometa-date-popover { position: absolute; z-index: 10; right: 0; top: calc(100% + 8px); display: grid; gap: 12px; width: 280px; max-width: calc(100vw - 48px); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px #0002; }
+.cometa-date-popover .inline-actions { justify-content: space-between; }
+@media (max-width: 900px) {
+  .cometa-filters { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .cometa-filters > .field:first-child { grid-column: 1 / -1; }
+}
 .cometa-currency-panels { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,400px),1fr)); gap: 16px; }
 .cometa-currency-panel { min-width: 0; }
 .cometa-currency-panel h3,.cometa-currency-panel h4 { margin: 0 0 16px; }
@@ -2936,6 +2947,7 @@ button:disabled {
 .cometa-category-help { margin: 0; color: var(--muted-foreground); }
 .cometa-warning-line { display: block; margin-top: 6px; }
 .cometa-archive-button { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 52px; font-weight: 700; }
+.cometa-archive-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .cometa-export-list,.cometa-cleanup-section { display: grid; gap: 14px; margin-top: 20px; min-width: 0; }
 .cometa-cleanup-section { border-top: 1px solid var(--border); padding-top: 18px; }
 .cometa-export-list .history-line-card { grid-template-columns: minmax(0,1fr); overflow-wrap: anywhere; }

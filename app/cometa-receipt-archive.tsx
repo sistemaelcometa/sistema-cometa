@@ -90,7 +90,7 @@ export function CometaReceiptArchive({organization,onChanged}:{organization:stri
   }catch(error){setMessage(errorMessage(error,"No se pudo liberar espacio. Podés reintentar."));await load();onChanged()}
   finally{working.current=false;setBusy(false);setProgress("")}
  }
- return <><button className="secondary-button cometa-archive-button" type="button" onClick={()=>setOpen(true)}><Download size={20}/>Descargar facturas del mes</button>{open&&<div className="modal-backdrop stacked-modal"><section className="modal wide-modal cometa-archive-modal" role="dialog" aria-modal="true" aria-label="Facturas del mes" aria-busy={busy}>
+ return <><button className="secondary-button cometa-archive-trigger" type="button" onClick={()=>setOpen(true)}><Download size={18}/>Descargar facturas</button>{open&&<div className="modal-backdrop stacked-modal"><section className="modal wide-modal cometa-archive-modal" role="dialog" aria-modal="true" aria-label="Facturas del mes" aria-busy={busy}>
   <div className="section-title"><div><h3>Facturas del mes</h3><p>El Cometa</p></div><button className="icon-button" disabled={busy} onClick={()=>setOpen(false)} aria-label="Cerrar">X</button></div>
   <label className="field">Mes de los comprobantes<input type="month" value={month} disabled={busy} onChange={event=>setMonth(event.target.value)}/></label>
   <p>Descarga todos los comprobantes online del mes, incluidos los de movimientos anulados, con un índice de movimientos. Cada archivo conserva su número interno. Los filtros de la tabla no limitan esta descarga.</p>

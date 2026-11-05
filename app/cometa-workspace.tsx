@@ -25,6 +25,15 @@ export function CometaWorkspace(){
  const [from,setFrom]=React.useState(()=>argentinaDay().slice(0,7)+"-01"),[to,setTo]=React.useState(""),[kind,setKind]=React.useState(""),[category,setCategory]=React.useState(""),[currency,setCurrency]=React.useState(""),[search,setSearch]=React.useState(""),[query,setQuery]=React.useState(""),[page,setPage]=React.useState(1),[refresh,setRefresh]=React.useState(0);
  const [formKind,setFormKind]=React.useState<"income"|"expense"|null>(null),[deleting,setDeleting]=React.useState<Movement|null>(null),[deletingBusy,setDeletingBusy]=React.useState(false),[ready,setReady]=React.useState<string|null>(null);
  const [attaching,setAttaching]=React.useState<Movement|null>(null);
+ const [showDates,setShowDates]=React.useState(false);
+ const dateFilter=React.useRef<HTMLDivElement>(null);
+ React.useEffect(()=>{
+  if(!showDates)return;
+  const dismiss=(event:PointerEvent)=>{if(!dateFilter.current?.contains(event.target as Node))setShowDates(false)};
+  const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")setShowDates(false)};
+  document.addEventListener("pointerdown",dismiss);document.addEventListener("keydown",escape);
+  return()=>{document.removeEventListener("pointerdown",dismiss);document.removeEventListener("keydown",escape)};
+ },[showDates]);
  const validRange=!from||!to||from<=to,pageSize=20,pages=Math.max(1,Math.ceil(report.total/pageSize));
  React.useEffect(()=>{const timer=setTimeout(()=>setQuery(search.trim()),300);return()=>clearTimeout(timer)},[search]);
  React.useEffect(()=>{setPage(1)},[from,to,kind,category,currency,query]);
@@ -67,16 +76,15 @@ export function CometaWorkspace(){
  }
  const categoryOptions=report.categories.filter(item=>!kind||item.kind===kind);
  return <div className="page-stack cometa-workspace">
-  <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div><div className="inline-actions"><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button></div></header>
-  {canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}
+  <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div><div className="inline-actions"><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button>{canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}</div></header>
   <section className="panel cometa-filters" aria-label="Filtros de movimientos">
-   <label className="field">Desde<input type="date" value={from} onChange={event=>setFrom(event.target.value)}/></label>
-   <label className="field">Hasta<input type="date" value={to} onChange={event=>setTo(event.target.value)}/></label>
+   <label className="field">Buscar<input autoComplete="off" type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Concepto, persona o factura"/></label>
    <label className="field">Tipo<select value={kind} onChange={event=>{setKind(event.target.value);setCategory("")}}><option value="">Ingresos y egresos</option><option value="income">Ingresos</option><option value="expense">Egresos</option></select></label>
    <label className="field">Categoría<select value={category} onChange={event=>setCategory(event.target.value)}><option value="">Todas</option>{categoryOptions.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
    <label className="field">Moneda<select value={currency} onChange={event=>setCurrency(event.target.value)}><option value="">Pesos y dólares</option><option value="ARS">Pesos argentinos</option><option value="USD">Dólares</option></select></label>
-   <label className="field">Buscar<input autoComplete="off" type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Concepto, persona o factura"/></label>
-   <button className="secondary-button compact-action" onClick={()=>{setFrom("");setTo("");setKind("");setCategory("");setCurrency("");setSearch("")}}>Ver todo</button>
+   <div className="field cometa-date-filter" ref={dateFilter}><span>Personalizado</span><button className="secondary-button cometa-date-toggle" type="button" aria-expanded={showDates} aria-controls="cometa-date-range" onClick={()=>setShowDates(value=>!value)} title={from&&to?dateLabel(from)+" – "+dateLabel(to):from?"Desde "+dateLabel(from):to?"Hasta "+dateLabel(to):"Todas las fechas"}><span className="cometa-date-value">{from&&to?dateLabel(from)+" – "+dateLabel(to):from?"Desde "+dateLabel(from):to?"Hasta "+dateLabel(to):"Todas las fechas"}</span><span aria-hidden="true">▾</span></button>
+    {showDates&&<div id="cometa-date-range" className="cometa-date-popover" role="group" aria-label="Rango de fechas"><label className="field">Desde<input autoComplete="off" type="date" value={from} onChange={event=>setFrom(event.target.value)}/></label><label className="field">Hasta<input autoComplete="off" type="date" value={to} onChange={event=>setTo(event.target.value)}/></label><div className="inline-actions"><button className="secondary-button compact-action" type="button" onClick={()=>{setFrom("");setTo("");setKind("");setCategory("");setCurrency("");setSearch("");setShowDates(false)}}>Ver todo</button><button className="primary-button compact-action" type="button" onClick={()=>setShowDates(false)}>Listo</button></div></div>}
+   </div>
   </section>
   {!validRange&&<p className="warning-box">La fecha Desde debe ser anterior o igual a Hasta.</p>}
   {error&&<p className="warning-box" role="alert">{error}</p>}
