@@ -10,6 +10,34 @@ Los importes admiten centavos. Pesos argentinos y dolares se muestran por separa
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
 
+## Comprobantes y descarga mensual
+
+Aplicar tambien `075_cometa_receipt_archives.sql`.
+Cada movimiento recibe un numero interno consecutivo por organizacion y mes, por ejemplo
+`202610-0001`. Este numero se conserva aunque se anule el movimiento o se archive su archivo.
+El numero fiscal de la factura se guarda aparte.
+
+Las fotos se convierten siempre a WebP (hasta 2000 px de lado mayor, calidad 80).
+Un error de conversion impide subir el original silenciosamente. Los PDF conservan su formato.
+El comprobante es opcional al crear el movimiento y se puede adjuntar despues.
+
+El boton **Descargar facturas del mes** abre un selector de mes y anio independiente de los filtros.
+Se puede descargar octubre durante noviembre. El ZIP contiene una carpeta `Octubre 2026`,
+los archivos numerados, `indice.csv` con TODOS los movimientos del mes y
+`manifest.json` con hashes SHA-256 de los archivos incluidos. Tambien incluye comprobantes de movimientos anulados.
+Cada ZIP tiene un nombre unico para evitar pisar descargas anteriores del mismo mes.
+En computadoras compatibles se escribe directamente al disco; el resto de navegadores usa
+una descarga en memoria limitada a 250 MB para evitar agotarla.
+
+Generar el ZIP no borra archivos. Despues de guardarlo y verificarlo, el usuario marca la confirmacion
+y elige **Eliminar comprobantes online de esta descarga**.
+La politica de Storage permite borrar solo los archivos de esa exportacion completada y confirmada.
+La comprobacion posterior marca como archivados solo los archivos que ya no existen en Storage.
+Si una limpieza falla a medias, se puede reintentar. Los comprobantes cargados despues de la
+exportacion y los restaurados con una carga nueva quedan protegidos.
+Los movimientos, numeros, importes y auditoria permanecen. Un comprobante archivado ya no se descarga
+desde el sistema; se consulta en el ZIP local y puede volver a adjuntarse.
+
 ## Lectura opcional de facturas
 
 Por decision del usuario, la lectura automatica queda postergada y desactivada por defecto.

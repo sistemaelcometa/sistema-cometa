@@ -2935,6 +2935,10 @@ button:disabled {
 .cometa-form-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 16px; }
 .cometa-category-help { margin: 0; color: var(--muted-foreground); }
 .cometa-warning-line { display: block; margin-top: 6px; }
+.cometa-archive-button { display: flex; justify-content: center; align-items: center; gap: 10px; width: 100%; min-height: 52px; font-weight: 700; }
+.cometa-export-list,.cometa-cleanup-section { display: grid; gap: 14px; margin-top: 20px; min-width: 0; }
+.cometa-cleanup-section { border-top: 1px solid var(--border); padding-top: 18px; }
+.cometa-export-list .history-line-card { grid-template-columns: minmax(0,1fr); overflow-wrap: anywhere; }
 @media (max-width: 600px) {
   .cometa-workspace .page-header { display: grid; gap: 14px; }
   .cometa-totals { grid-template-columns: 1fr; }

@@ -2,16 +2,17 @@
 
 import * as React from "react";
 import {Camera,Download,FileUp,Trash2} from "lucide-react";
+import {CometaReceiptArchive,CometaAttachReceipt} from "./cometa-receipt-archive";
 import {useActiveMembership} from "./auth-gate";
 import {supabase} from "@/lib/supabase/client";
 import {argentinaDay} from "@/lib/argentina-day";
-import {prepareUploadFile} from "@/lib/file-compression";
+import {prepareCometaReceipt,receiptNumber,receiptFilename} from "@/lib/cometa-receipts";
 import {parsePdeExpenseAmount,formatPdeExpenseInput} from "@/lib/pde-expense-amounts";
 import {formatPaymentCurrency} from "@/lib/urban-payment-amounts";
 import type {InvoiceDraft} from "@/lib/cometa-invoice";
 
 type Category={id:string;kind:"income"|"expense";name:string;description:string|null};
-type Movement={id:string;kind:"income"|"expense";movement_date:string;category_id:string;category_name:string;concept:string;counterparty:string|null;document_number:string|null;notes:string|null;amount:number;currency:"ARS"|"USD";receipt_path:string|null;receipt_name:string|null};
+type Movement={id:string;kind:"income"|"expense";movement_date:string;category_id:string;category_name:string;concept:string;counterparty:string|null;document_number:string|null;notes:string|null;amount:number;currency:"ARS"|"USD";receipt_path:string|null;receipt_name:string|null;receipt_month?:string;receipt_number?:number;receipt_archived_at?:string|null};
 type Report={categories:Category[];rows:Movement[];total:number;totals:{currency:string;income:number;expense:number}[];expensesByCategory:{currency:string;category_id:string;category_name:string;amount:number}[]};
 const emptyReport:Report={categories:[],rows:[],total:0,totals:[],expensesByCategory:[]};
 const money=(value:number,currency:string)=>formatPaymentCurrency(Number(value||0),currency);
@@ -23,6 +24,7 @@ export function CometaWorkspace(){
  const [report,setReport]=React.useState<Report>(emptyReport),[loading,setLoading]=React.useState(false),[error,setError]=React.useState("");
  const [from,setFrom]=React.useState(()=>argentinaDay().slice(0,7)+"-01"),[to,setTo]=React.useState(""),[kind,setKind]=React.useState(""),[category,setCategory]=React.useState(""),[currency,setCurrency]=React.useState(""),[search,setSearch]=React.useState(""),[query,setQuery]=React.useState(""),[page,setPage]=React.useState(1),[refresh,setRefresh]=React.useState(0);
  const [formKind,setFormKind]=React.useState<"income"|"expense"|null>(null),[deleting,setDeleting]=React.useState<Movement|null>(null),[deletingBusy,setDeletingBusy]=React.useState(false),[ready,setReady]=React.useState<string|null>(null);
+ const [attaching,setAttaching]=React.useState<Movement|null>(null);
  const validRange=!from||!to||from<=to,pageSize=20,pages=Math.max(1,Math.ceil(report.total/pageSize));
  React.useEffect(()=>{const timer=setTimeout(()=>setQuery(search.trim()),300);return()=>clearTimeout(timer)},[search]);
  React.useEffect(()=>{setPage(1)},[from,to,kind,category,currency,query]);
@@ -57,14 +59,16 @@ export function CometaWorkspace(){
   finally{setDeletingBusy(false)}
  }
  async function download(row:Movement){
-  if(!supabase||!row.receipt_path)return;
-  const {data,error:downloadError}=await supabase.storage.from("receipts").createSignedUrl(row.receipt_path,60);
+  if(!supabase||!row.receipt_path||row.receipt_archived_at)return;
+  const filename=receiptNumber(row)+"."+receiptFilename(row).split(".").pop();
+  const {data,error:downloadError}=await supabase.storage.from("receipts").createSignedUrl(row.receipt_path,60,{download:filename});
   if(downloadError){setError("No se pudo abrir el comprobante.");return}
-  const link=document.createElement("a");link.href=data.signedUrl;link.target="_blank";link.rel="noopener noreferrer";link.download=row.receipt_name||"comprobante";link.click();
+  const link=document.createElement("a");link.href=data.signedUrl;link.rel="noopener noreferrer";link.download=filename;link.click();
  }
  const categoryOptions=report.categories.filter(item=>!kind||item.kind===kind);
  return <div className="page-stack cometa-workspace">
   <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div><div className="inline-actions"><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button></div></header>
+  {canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}
   <section className="panel cometa-filters" aria-label="Filtros de movimientos">
    <label className="field">Desde<input type="date" value={from} onChange={event=>setFrom(event.target.value)}/></label>
    <label className="field">Hasta<input type="date" value={to} onChange={event=>setTo(event.target.value)}/></label>
@@ -81,10 +85,11 @@ export function CometaWorkspace(){
    const totals=report.totals.find(item=>item.currency===code),income=Number(totals?.income||0),expense=Number(totals?.expense||0),groups=report.expensesByCategory.filter(item=>item.currency===code);
    return <section className="panel cometa-currency-panel" key={code}><h3>{code==="ARS"?"Pesos argentinos":"Dólares"}</h3><div className="cometa-totals"><div><span>Ingresos</span><strong className="cometa-income">{money(income,code)}</strong></div><div><span>Egresos</span><strong className="cometa-expense">{money(expense,code)}</strong></div><div><span>Saldo</span><strong>{money(income-expense,code)}</strong></div></div><h4>Gastos acumulados por categoría</h4>{groups.length===0?<p className="empty-state">Todavía no hay egresos para estos filtros.</p>:<div className="cometa-category-chart">{groups.map((group,index)=><div className="cometa-category-row" key={group.category_id}><div><span>{group.category_name}</span><strong>{money(group.amount,code)}</strong></div><div className="cometa-category-track"><span style={{width:(expense?Number(group.amount)/expense*100:0)+"%",background:palette[index%palette.length]}}/></div></div>)}</div>}</section>;
   })}</div>
-  <section className="panel"><div className="section-title"><h3>Ingresos y egresos</h3><span>{report.total} movimientos</span></div>{report.rows.length===0?<p className="empty-state">{loading?"Cargando movimientos...":"No hay movimientos para estos filtros."}</p>:<div className="responsive-table"><table className="cometa-movements-table"><thead><tr>{["Fecha","Tipo","Categoría","Concepto","Contraparte","Factura","Moneda","Importe","Comprobante","Acciones"].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{report.rows.map(row=><tr key={row.id}><td>{dateLabel(row.movement_date)}</td><td><span className={"status-pill "+(row.kind==="income"?"success":"danger")}>{row.kind==="income"?"Ingreso":"Egreso"}</span></td><td>{row.category_name}</td><td>{row.concept}{row.notes&&<small className="payment-allocation-detail">{row.notes}</small>}</td><td>{row.counterparty||"-"}</td><td>{row.document_number||"-"}</td><td>{row.currency}</td><td className={row.kind==="income"?"cometa-income":"cometa-expense"}><strong>{money(row.amount,row.currency)}</strong></td><td><button className="circle-icon-button" disabled={!row.receipt_path} onClick={()=>download(row)} aria-label={row.receipt_path?"Abrir comprobante":"Sin comprobante"}><Download size={16}/></button></td><td>{canWrite&&<button className="circle-icon-button danger-icon-button" onClick={()=>setDeleting(row)} aria-label={"Anular "+row.concept}><Trash2 size={16}/></button>}</td></tr>)}</tbody></table></div>}
+  <section className="panel"><div className="section-title"><h3>Ingresos y egresos</h3><span>{report.total} movimientos</span></div>{report.rows.length===0?<p className="empty-state">{loading?"Cargando movimientos...":"No hay movimientos para estos filtros."}</p>:<div className="responsive-table"><table className="cometa-movements-table"><thead><tr>{["Fecha","Tipo","Categoría","Concepto","Contraparte","Factura","Moneda","Importe","Comprobante","Acciones"].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{report.rows.map(row=><tr key={row.id}><td>{dateLabel(row.movement_date)}</td><td><span className={"status-pill "+(row.kind==="income"?"success":"danger")}>{row.kind==="income"?"Ingreso":"Egreso"}</span></td><td>{row.category_name}</td><td>{row.concept}{row.notes&&<small className="payment-allocation-detail">{row.notes}</small>}</td><td>{row.counterparty||"-"}</td><td>{row.document_number||"-"}</td><td>{row.currency}</td><td className={row.kind==="income"?"cometa-income":"cometa-expense"}><strong>{money(row.amount,row.currency)}</strong></td><td><strong>{receiptNumber(row)}</strong><small className="payment-allocation-detail">{row.receipt_archived_at?"Archivado localmente":row.receipt_path?"Online":"Sin adjuntar"}</small><div className="inline-actions compact-actions">{row.receipt_path&&!row.receipt_archived_at&&<button className="circle-icon-button" onClick={()=>download(row)} aria-label={"Descargar comprobante "+receiptNumber(row)}><Download size={16}/></button>}{canWrite&&(!row.receipt_path||row.receipt_archived_at)&&<button className="circle-icon-button" onClick={()=>setAttaching(row)} aria-label={"Adjuntar comprobante a "+row.concept}><FileUp size={16}/></button>}</div></td><td>{canWrite&&<button className="circle-icon-button danger-icon-button" onClick={()=>setDeleting(row)} aria-label={"Anular "+row.concept}><Trash2 size={16}/></button>}</td></tr>)}</tbody></table></div>}
    {pages>1&&<div className="table-pagination"><span>Página {page} de {pages}</span><div className="inline-actions"><button className="secondary-button compact-action" disabled={page<=1||loading} onClick={()=>setPage(value=>value-1)}>Anterior</button><button className="secondary-button compact-action" disabled={page>=pages||loading} onClick={()=>setPage(value=>value+1)}>Siguiente</button></div></div>}
   </section>
   {formKind&&organization&&<CometaMovementModal kind={formKind} organization={organization} categories={report.categories.filter(item=>item.kind===formKind)} onClose={()=>setFormKind(null)} onSaved={()=>{setFormKind(null);setRefresh(value=>value+1)}}/>}
+  {attaching&&organization&&<CometaAttachReceipt organization={organization} movementId={attaching.id} onClose={()=>setAttaching(null)} onSaved={()=>{setAttaching(null);setRefresh(value=>value+1)}}/>}
   {deleting&&<div className="modal-backdrop stacked-modal"><section className="modal" role="dialog" aria-modal="true" aria-label="Anular movimiento"><h3>Anular movimiento</h3><p>{deleting.concept} · {money(deleting.amount,deleting.currency)}</p><p>Se quitará del saldo y del gráfico. El comprobante y la auditoría quedan conservados.</p><div className="modal-actions"><button className="secondary-button" disabled={deletingBusy} onClick={()=>setDeleting(null)}>Cancelar</button><button className="primary-button danger-confirm-button" disabled={deletingBusy} onClick={remove}>{deletingBusy?"Anulando...":"Anular movimiento"}</button></div></section></div>}
  </div>;
 }
@@ -100,7 +105,8 @@ export function CometaMovementModal({kind,organization,categories,onClose,onSave
   if(!value||working.current)return;
   if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(value.type)||value.size>20*1024*1024){setError("Usá PDF, JPG, PNG o WebP de hasta 20 MB.");return}
   working.current=true;setBusy(true);setError("");
-  try{setFile(await prepareUploadFile(value));setReviewed(false);setWarnings([])}
+  try{setFile(await prepareCometaReceipt(value));setReviewed(false);setWarnings([])}
+  catch(err){setError(err instanceof Error?err.message:"No se pudo convertir la imagen a WebP.")}
   finally{working.current=false;setBusy(false)}
  }
  async function readInvoice(){
@@ -147,7 +153,7 @@ export function CometaMovementModal({kind,organization,categories,onClose,onSave
    <input hidden ref={camera} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" onChange={event=>{void selectFile(event.target.files?.[0]||null);event.target.value=""}}/>
    <input hidden ref={upload} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={event=>{void selectFile(event.target.files?.[0]||null);event.target.value=""}}/>
    {file&&<div className="inline-actions"><span>{file.name}</span>{aiEnabled&&<button className="secondary-button compact-action" disabled={locked} onClick={readInvoice}>{reading?"Leyendo factura...":"Leer factura"}</button>}<button className="small-button" disabled={locked} onClick={()=>{setFile(null);setReviewed(false)}}>Quitar</button></div>}
-   <small>{aiEnabled?"Podés leer una factura para preparar un borrador o completar los campos manualmente.":"Adjuntá una foto o PDF del comprobante y completá los datos del movimiento."}</small>
+   <small>{aiEnabled?"Podés leer una factura para preparar un borrador o completar los campos manualmente.":"Podés adjuntar el comprobante ahora o después. Las fotos se guardan como WebP; los PDF conservan su formato."}</small>
   </div>
   {error&&<p className="warning-box" role="alert">{error}</p>}
   {draft&&<p className="warning-box" role="status">Borrador preparado. Verificá los datos con la factura antes de guardar.{warnings.map((warning,index)=><span className="cometa-warning-line" key={index}>{warning}</span>)}</p>}
