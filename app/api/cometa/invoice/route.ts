@@ -5,7 +5,8 @@ export const runtime="nodejs";
 export const maxDuration=60;
 const headers={"Cache-Control":"no-store"};
 const reply=(body:unknown,status=200)=>Response.json(body,{status,headers});
-export async function GET(){return reply({enabled:!!process.env.OPENAI_API_KEY});}
+const aiEnabled=()=>process.env.COMETA_INVOICE_AI_ENABLED==="true"&&!!process.env.OPENAI_API_KEY;
+export async function GET(){return reply({enabled:aiEnabled()});}
 
 export async function POST(request:Request){
   try{
@@ -22,7 +23,7 @@ export async function POST(request:Request){
     if(!/^[a-f0-9-]{36}$/i.test(organization)||!["income","expense"].includes(kind))return reply({error:"Datos de la consulta invalidos."},400);
     const {data:allowed,error:roleError}=await client.rpc("has_org_role",{target_organization_id:organization,allowed_roles:["owner","admin","editor"]});
     if(roleError||!allowed)return reply({error:"No tenes permisos para registrar movimientos."},403);
-    if(!process.env.OPENAI_API_KEY)return reply({error:"La lectura automática no está habilitada. Podés completar los datos manualmente."},503);
+    if(!aiEnabled())return reply({error:"La lectura automática no está habilitada. Podés completar los datos manualmente."},503);
     const file=form.get("file");
     if(!(file instanceof File)||file.size===0||file.size>3*1024*1024)return reply({error:"Elegí un archivo de hasta 3 MB."},400);
     if(!["application/pdf","image/jpeg","image/png","image/webp"].includes(file.type))return reply({error:"Usá PDF, JPG, PNG o WebP."},400);

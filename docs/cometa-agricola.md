@@ -12,10 +12,15 @@ Los movimientos anulados conservan el comprobante y la auditoria.
 
 ## Lectura opcional de facturas
 
+Por decision del usuario, la lectura automatica queda postergada y desactivada por defecto.
+El formulario muestra la carga manual y permite adjuntar una foto o PDF.
+Tener una clave configurada no activa la funcion por si solo.
+
 En el servidor de produccion (por ejemplo, variables de entorno de Vercel), configurar:
 
 - `OPENAI_API_KEY`: clave privada de la API de OpenAI. Nunca usar un prefijo `NEXT_PUBLIC_`.
 - `OPENAI_INVOICE_MODEL`: opcional; por defecto `gpt-4.1-mini`.
+- `COMETA_INVOICE_AI_ENABLED=true`: solo cuando se decida retomar la funcion. Por defecto esta desactivada.
 
 Volver a desplegar despues de configurar las variables. La API requiere una cuenta con
 acceso y facturacion habilitados. La suscripcion de ChatGPT no configura esta integracion.

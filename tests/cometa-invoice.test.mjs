@@ -27,12 +27,12 @@ test('invoice route requires editor access and only returns a reviewable draft',
  const require=createRequire(import.meta.url),ts=require('typescript');
  const source=await readFile(new URL('../app/api/cometa/invoice/route.ts',import.meta.url),'utf8');
  const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
- let allowed=true,key='test-key',providerCalls=0,roleCalls=0,providerResult={status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(draft)}]}]};
+ let allowed=true,key='test-key',enabled='true',providerCalls=0,roleCalls=0,providerResult={status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(draft)}]}]};
  const client={auth:{getUser:async()=>({data:{user:{id}},error:null})},rpc:async(name)=>{roleCalls++;assert.equal(name,'has_org_role');return{data:allowed,error:null}},
   from:name=>{assert.equal(name,'cometa_categories');return{select:()=>({eq:()=>({eq:async()=>({data:[{id:category,name:'Insumos'}],error:null})})})}}};
  const exports={};
  vm.runInNewContext(code,{exports,require:name=>name==='@supabase/supabase-js'?{createClient:()=>client}:{invoiceRequest,validateInvoiceDraft},
-  process:{env:{NEXT_PUBLIC_SUPABASE_URL:'https://test.supabase.co',NEXT_PUBLIC_SUPABASE_ANON_KEY:'anon',get OPENAI_API_KEY(){return key}}},
+  process:{env:{NEXT_PUBLIC_SUPABASE_URL:'https://test.supabase.co',NEXT_PUBLIC_SUPABASE_ANON_KEY:'anon',get OPENAI_API_KEY(){return key},get COMETA_INVOICE_AI_ENABLED(){return enabled}}},
   Response,Request,FormData,File,Uint8Array,AbortSignal,Buffer,fetch:async(url,init)=>{providerCalls++;assert.equal(url,'https://api.openai.com/v1/responses');assert.equal(JSON.parse(init.body).store,false);return Response.json(providerResult)}});
  const request=(auth=true,fileType='application/pdf',bytes='%PDF-1.4 fixture')=>{
   const form=new FormData();form.set('organizationId',id);form.set('kind','expense');form.set('file',new File([bytes],'factura.pdf',{type:fileType}));
@@ -40,7 +40,10 @@ test('invoice route requires editor access and only returns a reviewable draft',
  };
  assert.equal((await exports.POST(request(false))).status,401);assert.equal(providerCalls,0);
  allowed=false;assert.equal((await exports.POST(request())).status,403);assert.equal(providerCalls,0);
- allowed=true;key='';assert.equal((await exports.POST(request())).status,503);assert.equal(providerCalls,0);
+ allowed=true;enabled=undefined;assert.equal((await exports.GET()).status,200);assert.equal((await (await exports.GET()).json()).enabled,false);
+ assert.equal((await exports.POST(request())).status,503);assert.equal(providerCalls,0);
+ enabled='false';assert.equal((await exports.POST(request())).status,503);assert.equal(providerCalls,0);
+ enabled='true';key='';assert.equal((await exports.POST(request())).status,503);assert.equal(providerCalls,0);
  key='test-key';assert.equal((await exports.POST(request(true,'application/pdf','not-a-pdf'))).status,400);assert.equal(providerCalls,0);
  const response=await exports.POST(request());assert.equal(response.status,200);
  const result=await response.json();assert.equal(result.draft.amount,123.45);assert.equal(result.draft.categoryId,category);assert.equal(providerCalls,1);
