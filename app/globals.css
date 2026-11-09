@@ -2952,7 +2952,7 @@ button:disabled {
 .cometa-lot-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,420px),1fr)); gap: 12px; }
 .cometa-lot-list > div { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-width: 0; overflow-wrap: anywhere; }
 .cometa-lot-list .inline-actions { gap: 8px; }
-.cometa-harvest-origin { display: grid; gap: 6px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.cometa-manager-list { margin-top: 16px; grid-template-columns: minmax(0,1fr); }
 .cometa-store-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,340px),1fr)); gap: 16px; min-width: 0; }
 .cometa-store-card { display: grid; align-content: start; gap: 14px; min-width: 0; overflow-wrap: anywhere; }
 .cometa-store-card h4 { margin: 6px 0 0; }
