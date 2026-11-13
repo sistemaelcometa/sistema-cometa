@@ -2960,6 +2960,8 @@ button:disabled {
 .cometa-stock-list > div { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--border); padding-top: 12px; }
 .cometa-stock-list span { display: grid; gap: 6px; }
 .cometa-split { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--border); border-radius: 8px; min-width: 0; }
+.cometa-storage-picker { display: grid; align-content: start; gap: 8px; min-width: 0; }
+.cometa-storage-picker > button { justify-self: start; }
 .cometa-grain-table th { color: var(--brand-blue); }
 .cometa-invoice-upload { display: grid; gap: 12px; padding: 14px; margin-bottom: 16px; border: 1px dashed #b4cbd9; border-radius: 8px; background: #f8fbfd; overflow-wrap: anywhere; }
 .cometa-invoice-upload button { display: inline-flex; align-items: center; gap: 6px; }
