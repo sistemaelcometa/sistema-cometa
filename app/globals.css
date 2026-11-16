@@ -2931,6 +2931,7 @@ button:disabled {
 .cometa-currency-panels { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,400px),1fr)); gap: 16px; }
 .cometa-currency-panel { min-width: 0; }
 .cometa-currency-panel h3,.cometa-currency-panel h4 { margin: 0 0 16px; }
+.cometa-currency-panel > h3 { text-align: center; font-weight: 800; }
 .cometa-currency-panel h4 { margin-top: 22px; }
 .cometa-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .cometa-totals > div { display: grid; gap: 6px; overflow-wrap: anywhere; }

@@ -27,7 +27,7 @@ export function CometaWorkspace(){
  const [section,setSection]=React.useState("movements");
  const supplierData=useCometaSuppliers(organization);
  const [report,setReport]=React.useState<Report>(emptyReport),[loading,setLoading]=React.useState(false),[error,setError]=React.useState("");
- const [from,setFrom]=React.useState(()=>argentinaDay().slice(0,7)+"-01"),[to,setTo]=React.useState(""),[kind,setKind]=React.useState(""),[category,setCategory]=React.useState(""),[currency,setCurrency]=React.useState(""),[search,setSearch]=React.useState(""),[query,setQuery]=React.useState(""),[page,setPage]=React.useState(1),[refresh,setRefresh]=React.useState(0);
+ const [from,setFrom]=React.useState(""),[to,setTo]=React.useState(""),[kind,setKind]=React.useState(""),[category,setCategory]=React.useState(""),[currency,setCurrency]=React.useState(""),[search,setSearch]=React.useState(""),[query,setQuery]=React.useState(""),[page,setPage]=React.useState(1),[refresh,setRefresh]=React.useState(0);
  const [formKind,setFormKind]=React.useState<"income"|"expense"|null>(null),[deleting,setDeleting]=React.useState<Movement|null>(null),[deletingBusy,setDeletingBusy]=React.useState(false),[ready,setReady]=React.useState<string|null>(null);
  const [attaching,setAttaching]=React.useState<Movement|null>(null);
  const [showDates,setShowDates]=React.useState(false);
