@@ -7,15 +7,15 @@ const cropColors=['#98bd7c','#e3c16c','#84b9d3','#bb9acd','#d4967b','#7db8a8'];
 const cropKey=(crop:string)=>crop.trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 function cropColor(crop:string){const key=cropKey(crop),known:Record<string,string>={soja:'#98bd7c',maiz:'#e3c16c',trigo:'#d4967b',girasol:'#bb9acd',sorgo:'#84b9d3'};if(known[key])return known[key];let hash=0;for(const letter of key)hash=(hash*31+letter.charCodeAt(0))>>>0;return cropColors[hash%cropColors.length]}
 
-export function CometaStorage({data,canWrite,onEdit,onExtract}:{data:GrainData;canWrite:boolean;onEdit:(store:GrainStore)=>void;onExtract:(store:GrainStore)=>void}){
+export function CometaStorage({data,canWrite,onEdit}:{data:GrainData;canWrite:boolean;onEdit:(store:GrainStore)=>void}){
  return <>{([{kind:'silo',title:'Silos fijos'},{kind:'bag',title:'Silos bolsa'}] as const).map(group=>{
   const stores=data.stores.filter(store=>store.kind===group.kind),ids=new Set(stores.map(store=>store.id));
   const total=data.balances.filter(row=>ids.has(row.store_id)).reduce((sum,row)=>sum+Number(row.tonnes),0);
-  return <section className="cometa-storage-group" aria-label={group.title} key={group.kind}><div className="section-title"><h4>{group.title}</h4><strong>{tonnes(total)} almacenadas</strong></div>{stores.length===0?<p className="empty-state">{group.kind==='bag'?'Todavía no hay silos bolsa. Podés crearlos al registrar una cosecha.':'Todavía no hay silos fijos.'}</p>:<div className="cometa-store-grid">{stores.map(store=><GrainStoreCard key={store.id} store={store} data={data} canWrite={canWrite} onEdit={()=>onEdit(store)} onExtract={()=>onExtract(store)}/>)}</div>}</section>;
+  return <section className="cometa-storage-group" aria-label={group.title} key={group.kind}><div className="section-title"><h4>{group.title}</h4><strong>{tonnes(total)} almacenadas</strong></div>{stores.length===0?<p className="empty-state">{group.kind==='bag'?'Todavía no hay silos bolsa. Podés crearlos al registrar una cosecha.':'Todavía no hay silos fijos.'}</p>:<div className="cometa-store-grid">{stores.map(store=><GrainStoreCard key={store.id} store={store} data={data} canWrite={canWrite} onEdit={()=>onEdit(store)}/>)}</div>}</section>;
  })}</>;
 }
 
-function GrainStoreCard({store,data,canWrite,onEdit,onExtract}:{store:GrainStore;data:GrainData;canWrite:boolean;onEdit:()=>void;onExtract:()=>void}){
+function GrainStoreCard({store,data,canWrite,onEdit}:{store:GrainStore;data:GrainData;canWrite:boolean;onEdit:()=>void}){
  const clipId=React.useId().replace(/:/g,''),balances=data.balances.filter(row=>row.store_id===store.id&&Number(row.tonnes)>0),total=balances.reduce((sum,row)=>sum+Number(row.tonnes),0);
  const harvests=new Map(data.harvests.map(row=>[row.id,row])),crops=new Map<string,{name:string;tonnes:number}>();
  for(const balance of balances){const name=harvests.get(balance.harvest_id)?.crop||'Cultivo sin especificar',key=cropKey(name),previous=crops.get(key);crops.set(key,{name,tonnes:(previous?.tonnes||0)+Number(balance.tonnes)})}
@@ -33,6 +33,5 @@ function GrainStoreCard({store,data,canWrite,onEdit,onExtract}:{store:GrainStore
    </svg><strong className={percent===null?'is-unknown':''}>{label}</strong>
   </div><div className="cometa-store-summary"><strong className="cometa-stock-amount">{tonnes(total)}</strong><small>{percent===null?'Capacidad sin definir':'Capacidad: '+tonnes(capacity)}</small>{percent!==null&&percent>100&&<small className="cometa-expense">La cantidad supera la capacidad registrada.</small>}{!cropsList.length?<span className="cometa-empty-stock">Sin existencias.</span>:<ul className="cometa-crop-list">{cropsList.map(crop=><li key={crop.name}><span><i style={{background:cropColor(crop.name)}} aria-hidden="true"/>{crop.name}</span><strong>{tonnes(crop.tonnes)}</strong></li>)}</ul>}</div></div>
   {balances.length>0&&<details className="cometa-origin-details"><summary>Origen de la mercadería ({balances.length} {balances.length===1?'partida':'partidas'})</summary><div className="cometa-stock-list">{balances.map(row=><div key={row.harvest_id}><span>{harvestLabel(harvests.get(row.harvest_id))}<strong>{tonnes(row.tonnes)}</strong></span></div>)}</div></details>}
-  {canWrite&&<button className="secondary-button cometa-extract-button" disabled={total<=0} onClick={onExtract}>Extraer mercadería</button>}
  </article>;
 }

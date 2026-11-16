@@ -2975,7 +2975,8 @@ button:disabled {
 .cometa-origin-details { border-top: 1px solid var(--border); padding-top: 12px; }
 .cometa-origin-details summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 .cometa-origin-details .cometa-stock-list { margin-top: 12px; }
-.cometa-extract-button { width: 100%; }
+.cometa-extraction-total { font-size: 20px; padding-top: 8px; }
+.cometa-history-part { display: block; margin: 4px 0; }
 @media (max-width: 380px) {
   .cometa-store-contents { grid-template-columns: 100px minmax(0,1fr); gap: 10px; }
 }
