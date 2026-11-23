@@ -1,7 +1,7 @@
 export type GrainField={id:string;name:string;hectares?:number|null;deleted_at?:string|null};
 export type GrainStore={id:string;location:string;name:string;kind:'silo'|'bag';capacity:number|null};
 export type Harvest={id:string;field_id:string;field_name:string;field_hectares?:number|null;harvest_date:string;campaign:string;season?:'fina'|'gruesa'|null;crop:string;tonnes:number;voided:boolean};
-export type GrainEvent={id:string;operation_id:string;harvest_id:string;event_date:string;kind:'deposit'|'direct_sale'|'sale'|'transfer';source_id:string|null;destination_id:string|null;tonnes:number;recipient:string;reference:string;voided_at:string|null;request?:{batch_exit?:boolean}|null};
+export type GrainEvent={id:string;operation_id:string;harvest_id:string;event_date:string;kind:'deposit'|'direct_sale'|'sale'|'transfer';source_id:string|null;destination_id:string|null;tonnes:number;recipient:string;reference:string;voided_at:string|null;request?:{batch_exit?:boolean}|null;sequence?:number;created_at?:string};
 export type GrainData={fields:GrainField[];stores:GrainStore[];harvests:Harvest[];balances:{harvest_id:string;store_id:string;tonnes:number}[];events:GrainEvent[]};
 export const emptyGrain:GrainData={fields:[],stores:[],harvests:[],balances:[],events:[]};
 export function parseTonnes(value:string){
@@ -21,4 +21,12 @@ export function groupGrainEvents(events:GrainEvent[]){
  const groups=new Map<string,{id:string;events:GrainEvent[]}>();
  for(const event of events){const key=event.request?.batch_exit?'batch:'+event.operation_id:'event:'+event.id;const group=groups.get(key);if(group)group.events.push(event);else groups.set(key,{id:key,events:[event]})}
  return Array.from(groups.values());
+}
+// La bolsa se llena por sus entradas reales. Las extracciones no reducen la
+// referencia; nuevas cargas pueden completarla hasta un contenido mayor.
+export function bagReferenceTonnes(storeId:string,events:GrainEvent[]){
+ const timeline=events.map((event,index)=>({event,index})).filter(({event})=>!event.voided_at&&(event.source_id===storeId||event.destination_id===storeId)).sort((a,b)=>a.event.event_date.localeCompare(b.event.event_date)||(a.event.sequence!=null&&b.event.sequence!=null?Number(a.event.sequence)-Number(b.event.sequence):String(a.event.created_at||'').localeCompare(String(b.event.created_at||''))||b.index-a.index));
+ let stockKg=0,peakKg=0;
+ for(const {event} of timeline){const quantity=Math.round(Number(event.tonnes)*1000);stockKg+=(event.destination_id===storeId?quantity:0)-(event.source_id===storeId?quantity:0);peakKg=Math.max(peakKg,stockKg)}
+ return peakKg/1000;
 }

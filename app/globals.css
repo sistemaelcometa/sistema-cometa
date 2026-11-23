@@ -2960,6 +2960,7 @@ button:disabled {
 .cometa-storage-group { display: grid; gap: 16px; min-width: 0; }
 .cometa-storage-group > .section-title { margin: 0; }
 .cometa-storage-group > .section-title h4 { margin: 0; font-size: 18px; font-weight: 800; }
+.cometa-bag-help { margin: 0; color: var(--muted-foreground); font-size: 13px; }
 .cometa-store-contents { display: grid; grid-template-columns: 132px minmax(0,1fr); align-items: center; gap: 16px; }
 .cometa-silo-visual { position: relative; display: grid; place-items: center; min-width: 0; }
 .cometa-silo-visual svg { display: block; width: 100%; height: 180px; }
