@@ -31,6 +31,7 @@ export function CometaWorkspace(){
  const [formKind,setFormKind]=React.useState<"income"|"expense"|null>(null),[deleting,setDeleting]=React.useState<Movement|null>(null),[deletingBusy,setDeletingBusy]=React.useState(false),[ready,setReady]=React.useState<string|null>(null);
  const [attaching,setAttaching]=React.useState<Movement|null>(null);
  const [showDates,setShowDates]=React.useState(false);
+ const [showFilters,setShowFilters]=React.useState(false);
  const dateFilter=React.useRef<HTMLDivElement>(null);
  React.useEffect(()=>{
   if(!showDates)return;
@@ -80,14 +81,16 @@ export function CometaWorkspace(){
   const link=document.createElement("a");link.href=data.signedUrl;link.rel="noopener noreferrer";link.download=filename;link.click();
  }
  const categoryOptions=report.categories.filter(item=>!kind||item.kind===kind);
+ const activeFilters=[search.trim(),kind,category,currency,from||to].filter(Boolean).length;
+ function clearFilters(){setFrom("");setTo("");setKind("");setCategory("");setCurrency("");setSearch("");setQuery("");setShowDates(false)}
  return <div className="page-stack cometa-workspace">
   <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div></header>
   <nav className="segmented-control cometa-section-tabs" aria-label="Secciones de El Cometa">{[{id:"movements",label:"Caja"},{id:"harvest",label:"Cosechas"},{id:"storage",label:"Acopios"},{id:"suppliers",label:"Proveedores"}].map(item=><button key={item.id} type="button" className={section===item.id?"active":""} aria-pressed={section===item.id} onClick={()=>{setSection(item.id);setShowDates(false);if(item.id==="suppliers")supplierData.reload()}}>{item.label}</button>)}</nav>
   {(section==="harvest"||section==="storage")&&organization&&<CometaGrain key={organization+section} organization={organization} canWrite={canWrite} view={section}/>}
   {section==="suppliers"&&organization&&<CometaSuppliers key={organization} organization={organization} canWrite={canWrite} {...supplierData} onChanged={supplierData.reload}/>}
   {section==="movements"&&<>
-  <div className="inline-actions cometa-cash-actions"><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button>{canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}</div>
-  <section className="panel cometa-filters" aria-label="Filtros de movimientos">
+  <div className="cometa-cash-toolbar"><div className="inline-actions"><button className="secondary-button" type="button" aria-expanded={showFilters} aria-controls="cometa-cash-filters" onClick={()=>{setShowFilters(value=>!value);setShowDates(false)}}>{showFilters?"Ocultar filtros":"Buscar y filtrar"}{activeFilters>0&&<span className="cometa-filter-count" aria-label={activeFilters+" filtros activos"}>{activeFilters}</span>}</button>{activeFilters>0&&<button className="small-button" type="button" onClick={clearFilters}>Limpiar filtros</button>}</div><div className="inline-actions cometa-cash-actions"><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button>{canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}</div></div>
+  {showFilters&&<section id="cometa-cash-filters" className="panel cometa-filters" aria-label="Filtros de movimientos">
    <label className="field">Buscar<input autoComplete="off" type="search" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Concepto, persona o factura"/></label>
    <label className="field">Tipo<select value={kind} onChange={event=>{setKind(event.target.value);setCategory("")}}><option value="">Ingresos y egresos</option><option value="income">Ingresos</option><option value="expense">Egresos</option></select></label>
    <label className="field">Categoría<select value={category} onChange={event=>setCategory(event.target.value)}><option value="">Todas</option>{categoryOptions.map(item=><option value={item.id} key={item.id}>{item.name}</option>)}</select></label>
@@ -95,7 +98,7 @@ export function CometaWorkspace(){
    <div className="field cometa-date-filter" ref={dateFilter}><span>Personalizado</span><button className="secondary-button cometa-date-toggle" type="button" aria-expanded={showDates} aria-controls="cometa-date-range" onClick={()=>setShowDates(value=>!value)} title={from&&to?dateLabel(from)+" – "+dateLabel(to):from?"Desde "+dateLabel(from):to?"Hasta "+dateLabel(to):"Todas las fechas"}><span className="cometa-date-value">{from&&to?dateLabel(from)+" – "+dateLabel(to):from?"Desde "+dateLabel(from):to?"Hasta "+dateLabel(to):"Todas las fechas"}</span><span aria-hidden="true">▾</span></button>
     {showDates&&<div id="cometa-date-range" className="cometa-date-popover" role="group" aria-label="Rango de fechas"><label className="field">Desde<input autoComplete="off" type="date" value={from} onChange={event=>setFrom(event.target.value)}/></label><label className="field">Hasta<input autoComplete="off" type="date" value={to} onChange={event=>setTo(event.target.value)}/></label><div className="inline-actions"><button className="secondary-button compact-action" type="button" onClick={()=>{setFrom("");setTo("");setKind("");setCategory("");setCurrency("");setSearch("");setShowDates(false)}}>Ver todo</button><button className="primary-button compact-action" type="button" onClick={()=>setShowDates(false)}>Listo</button></div></div>}
    </div>
-  </section>
+  </section>}
   {!validRange&&<p className="warning-box">La fecha Desde debe ser anterior o igual a Hasta.</p>}
   {error&&<p className="warning-box" role="alert">{error}</p>}
   {loading&&<p className="sync-message" role="status">Actualizando movimientos...</p>}

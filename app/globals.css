@@ -2934,7 +2934,7 @@ button:disabled {
 .cometa-currency-panel > h3 { text-align: center; font-weight: 800; }
 .cometa-currency-panel h4 { margin-top: 22px; }
 .cometa-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
-.cometa-totals > div { display: grid; gap: 6px; overflow-wrap: anywhere; }
+.cometa-totals > div { display: grid; gap: 6px; overflow-wrap: anywhere; text-align: center; }
 .cometa-income { color: #326329; }
 .cometa-expense { color: #a63131; }
 .cometa-category-chart { display: grid; gap: 16px; }
@@ -2946,6 +2946,8 @@ button:disabled {
 .cometa-suppliers-table { min-width: 600px; }
 .cometa-section-tabs { justify-self: start; max-width: 100%; grid-template-columns: repeat(4,minmax(0,1fr)); }
 .cometa-cash-actions { justify-content: flex-end; }
+.cometa-cash-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.cometa-filter-count { display: inline-flex; justify-content: center; align-items: center; min-width: 22px; height: 22px; margin-left: 8px; padding: 0 5px; border-radius: 11px; background: #e4eff6; color: #245778; font-size: 12px; }
 .cometa-grain,.cometa-grain > .panel { min-width: 0; }
 .cometa-grain-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin: 18px 0; }
 .cometa-grain-totals > div { display: grid; gap: 6px; }
