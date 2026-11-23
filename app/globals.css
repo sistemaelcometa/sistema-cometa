@@ -2964,6 +2964,13 @@ button:disabled {
 .cometa-lot-list > div { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-width: 0; overflow-wrap: anywhere; }
 .cometa-lot-list .inline-actions { gap: 8px; }
 .cometa-manager-list { margin-top: 16px; grid-template-columns: minmax(0,1fr); }
+.modal.cometa-field-modal { width: min(640px,100%); }
+.cometa-field-modal > .section-title { display: flex; flex-direction: row; justify-content: space-between; align-items: center; }
+.cometa-field-modal h3 { font-weight: 800; }
+.cometa-field-grid { align-items: start; }
+.cometa-field-grid input { height: 44px; min-height: 44px; }
+.cometa-field-help { margin: 0; line-height: 1.5; color: var(--muted-foreground); font-weight: 400; }
+.cometa-field-modal .modal-actions { justify-content: flex-end; }
 .cometa-store-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,340px),1fr)); gap: 16px; min-width: 0; }
 .cometa-store-card { display: grid; align-content: start; gap: 14px; min-width: 0; overflow-wrap: anywhere; }
 .cometa-store-card h4 { margin: 6px 0 0; }
