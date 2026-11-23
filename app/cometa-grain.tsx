@@ -5,7 +5,7 @@ import {CometaStorage} from "./cometa-storage";
 import {CometaFieldManager} from "./cometa-field-manager";
 import {supabase} from "@/lib/supabase/client";
 import {argentinaDay} from "@/lib/argentina-day";
-import {emptyGrain,parseTonnes,tonnes,storeLabel,harvestLabel,hectaresLabel,yieldLabel,groupGrainEvents,harvestCropTotals} from "@/lib/cometa-grain";
+import {emptyGrain,parseTonnes,tonnes,storeLabel,harvestLabel,hectaresLabel,yieldLabel,groupGrainEvents,harvestCropTotals,storageCropTotals} from "@/lib/cometa-grain";
 import type {GrainData,GrainStore,GrainField} from "@/lib/cometa-grain";
 
 const dateLabel=(value:string)=>value.split('-').reverse().join('/');
@@ -35,11 +35,11 @@ export function CometaGrain({organization,canWrite,view}:{organization:string;ca
  }
  const cropTotals=harvestCropTotals(data),stock=data.balances.reduce((sum,row)=>sum+Number(row.tonnes),0);
  const harvestById=new Map(data.harvests.map(row=>[row.id,row])),storeById=new Map(data.stores.map(row=>[row.id,row]));
- const stockInSilos=data.balances.filter(row=>storeById.get(row.store_id)?.kind==='silo').reduce((sum,row)=>sum+Number(row.tonnes),0),stockInBags=data.balances.filter(row=>storeById.get(row.store_id)?.kind==='bag').reduce((sum,row)=>sum+Number(row.tonnes),0);
+ const storageTotals=storageCropTotals(data);
  const visibleGroups=groupGrainEvents(data.events).filter(group=>group.events.some(row=>!filter||harvestLabel(harvestById.get(row.harvest_id)).toLocaleLowerCase().includes(filter.toLocaleLowerCase())||[storeLabel(storeById.get(row.source_id||'')),storeLabel(storeById.get(row.destination_id||'')),row.recipient,row.reference,eventNames[row.kind]].some(text=>text.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))));
  return <div className="page-stack cometa-grain">
   <section className="panel"><div className="section-title"><h3>{view==='harvest'?'Cosechas':'Acopios'}</h3>{canWrite&&<div className="inline-actions">{view==='harvest'?<><button className="secondary-button" disabled={loading} onClick={()=>setShowFields(true)}>Lotes</button><button className="primary-button" disabled={loading||!!error||!fields.length} onClick={()=>open('harvest')}>Registrar cosecha</button></>:<><button className="secondary-button" onClick={()=>open('store')}>Agregar silo / silo bolsa</button><button className="primary-button" disabled={loading||!!error||stock<=0} onClick={()=>setExtracting(true)}>Extraer mercadería</button></>}</div>}</div>
-   {view==='storage'?<div className="cometa-grain-totals"><div><span>Total almacenado</span><strong>{tonnes(stock)}</strong></div><div><span>Almacenado en silos fijos</span><strong>{tonnes(stockInSilos)}</strong></div><div><span>Almacenado en silos bolsa</span><strong>{tonnes(stockInBags)}</strong></div></div>:<div className="cometa-harvest-crops">{cropTotals.map(crop=><article className={"cometa-harvest-crop crop-"+crop.key} aria-label={"Resumen de "+crop.name} key={crop.key}><h4>{crop.name}</h4><div className="cometa-crop-figures"><div><span>Cosechado</span><strong>{tonnes(crop.harvested)}</strong></div><div><span>Almacenado</span><strong>{tonnes(crop.stored)}</strong></div></div></article>)}</div>}
+   {view==='storage'?<div className="cometa-harvest-crops cometa-storage-crops">{storageTotals.map(crop=><article className={"cometa-harvest-crop crop-"+crop.key} aria-label={"Almacenado de "+crop.name} key={crop.key}><h4>{crop.name}</h4><div className="cometa-storage-crop-total"><span>Almacenado</span><strong>{tonnes(crop.stored)}</strong></div><div className="cometa-crop-figures"><div><span>En silos fijos</span><strong>{tonnes(crop.fixed)}</strong></div><div><span>En silos bolsa</span><strong>{tonnes(crop.bags)}</strong></div></div></article>)}</div>:<div className="cometa-harvest-crops">{cropTotals.map(crop=><article className={"cometa-harvest-crop crop-"+crop.key} aria-label={"Resumen de "+crop.name} key={crop.key}><h4>{crop.name}</h4><div className="cometa-crop-figures"><div><span>Cosechado</span><strong>{tonnes(crop.harvested)}</strong></div><div><span>Almacenado</span><strong>{tonnes(crop.stored)}</strong></div></div></article>)}</div>}
    {view==='storage'&&<small>Toneladas con hasta 3 decimales, sin separador de miles (ej.: 1250,500). Los cobros se cargan en Caja.</small>}
   </section>
   {error&&<p className="warning-box" role="alert">{error} <button className="small-button" onClick={()=>setVersion(value=>value+1)}>Reintentar</button></p>}

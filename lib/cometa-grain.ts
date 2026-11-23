@@ -38,3 +38,10 @@ export function harvestCropTotals(data:GrainData){
  for(const balance of data.balances){const harvest=harvests.get(balance.harvest_id),item=harvest&&totals.find(item=>item.key===normalize(harvest.crop));if(item)item.storedKg+=Math.round(Number(balance.tonnes)*1000)}
  return totals.map(({key,name,harvestedKg,storedKg})=>({key,name,harvested:harvestedKg/1000,stored:storedKg/1000}));
 }
+export function storageCropTotals(data:GrainData){
+ const normalize=(value:string)=>value.trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const totals=[{key:'maiz',name:'Maíz',fixedKg:0,bagKg:0},{key:'soja',name:'Soja',fixedKg:0,bagKg:0},{key:'trigo',name:'Trigo',fixedKg:0,bagKg:0}];
+ const harvests=new Map(data.harvests.filter(row=>!row.voided).map(row=>[row.id,row])),stores=new Map(data.stores.map(row=>[row.id,row]));
+ for(const balance of data.balances){const harvest=harvests.get(balance.harvest_id),store=stores.get(balance.store_id),item=harvest&&totals.find(item=>item.key===normalize(harvest.crop));if(!item||!store)continue;const amount=Math.round(Number(balance.tonnes)*1000);if(store.kind==='silo')item.fixedKg+=amount;else item.bagKg+=amount}
+ return totals.map(({key,name,fixedKg,bagKg})=>({key,name,stored:(fixedKg+bagKg)/1000,fixed:fixedKg/1000,bags:bagKg/1000}));
+}
