@@ -2953,6 +2953,9 @@ button:disabled {
 .cometa-grain-totals > div { display: grid; gap: 6px; }
 .cometa-grain-totals strong,.cometa-stock-amount { font-size: 24px; }
 .cometa-harvest-crops { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; margin-top: 20px; }
+.cometa-harvest-filter { display: flex; margin-top: 18px; }
+.cometa-harvest-filter .field { width: min(100%,260px); min-width: 0; }
+.cometa-harvest-only .cometa-crop-figures { grid-template-columns: minmax(0,1fr); }
 .cometa-harvest-crop { border: 1px solid var(--border); border-top: 4px solid #98bd7c; border-radius: 10px; padding: 18px; min-width: 0; }
 .cometa-harvest-crop.crop-maiz { border-top-color: #e3c16c; }
 .cometa-harvest-crop.crop-trigo { border-top-color: #d4967b; }
