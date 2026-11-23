@@ -30,3 +30,11 @@ export function bagReferenceTonnes(storeId:string,events:GrainEvent[]){
  for(const {event} of timeline){const quantity=Math.round(Number(event.tonnes)*1000);stockKg+=(event.destination_id===storeId?quantity:0)-(event.source_id===storeId?quantity:0);peakKg=Math.max(peakKg,stockKg)}
  return peakKg/1000;
 }
+export function harvestCropTotals(data:GrainData){
+ const normalize=(value:string)=>value.trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const totals=[{key:'maiz',name:'Maíz',harvestedKg:0,storedKg:0},{key:'soja',name:'Soja',harvestedKg:0,storedKg:0},{key:'trigo',name:'Trigo',harvestedKg:0,storedKg:0}];
+ const harvests=new Map(data.harvests.filter(row=>!row.voided).map(row=>[row.id,row]));
+ for(const harvest of harvests.values()){const item=totals.find(item=>item.key===normalize(harvest.crop));if(item)item.harvestedKg+=Math.round(Number(harvest.tonnes)*1000)}
+ for(const balance of data.balances){const harvest=harvests.get(balance.harvest_id),item=harvest&&totals.find(item=>item.key===normalize(harvest.crop));if(item)item.storedKg+=Math.round(Number(balance.tonnes)*1000)}
+ return totals.map(({key,name,harvestedKg,storedKg})=>({key,name,harvested:harvestedKg/1000,stored:storedKg/1000}));
+}
