@@ -10,6 +10,17 @@ Los importes admiten centavos. Pesos argentinos y dolares se muestran por separa
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
 
+## Identidad de silos bolsa
+
+Aplicar `084_cometa_bag_numbers.sql` para numerar las bolsas existentes y nuevas.
+Cada bolsa tiene un numero interno permanente por organizacion (SB-0001, SB-0002, etc.).
+Puede repetirse su nombre y ubicacion: cada nueva bolsa conserva su propio UUID, stock,
+carga de referencia e historial. El numero aparece en tarjetas, selectores e historial.
+Editar nombre o ubicacion no cambia ese numero; el tipo de almacenamiento es permanente.
+La numeracion no se reinicia al vaciar una bolsa. Los silos fijos conservan la restriccion
+de nombre unico por ubicacion. Crear desde Cosecha devuelve el numero inmediatamente y
+los reintentos de guardado conservan la identidad para evitar crear otra bolsa por error.
+
 ## Traslados y liquidacion de stock
 
 Aplicar `083_cometa_clear_stock.sql` despues de `081_cometa_multi_source_extractions.sql`.

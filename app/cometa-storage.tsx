@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import {bagReferenceTonnes,harvestLabel,storeLabel,tonnes} from "@/lib/cometa-grain";
+import {bagReferenceTonnes,bagNumberLabel,harvestLabel,storeLabel,tonnes} from "@/lib/cometa-grain";
 import type {GrainData,GrainStore} from "@/lib/cometa-grain";
 
 const cropColors=['#98bd7c','#e3c16c','#84b9d3','#bb9acd','#d4967b','#7db8a8'];
@@ -25,7 +25,7 @@ function GrainStoreCard({store,data,canWrite,onEdit}:{store:GrainStore;data:Grai
  const shape=isBag?'M42 24 H138 A30 30 0 0 1 138 84 H42 A30 30 0 0 1 42 24Z':'M26 44 L70 16 L114 44 V144 Q70 164 26 144Z';
  const bottom=isBag?84:154,height=isBag?60:110,unknownFill=percent===null&&total>0,visibleHeight=unknownFill?height:percent===null?0:height*Math.min(percent/100,1);
  let filled=0;
- return <article className="panel cometa-store-card"><div className="section-title"><div><small>{store.location} · {isBag?'Silo bolsa':'Silo fijo'}</small><h4>{store.name}</h4></div>{canWrite&&<button className="small-button" onClick={onEdit}>Editar</button>}</div>
+ return <article className="panel cometa-store-card"><div className="section-title"><div><small>{store.location} · {isBag?'Silo bolsa':'Silo fijo'}</small><h4>{store.name}</h4>{bagNumberLabel(store)&&<strong className="cometa-bag-number">{bagNumberLabel(store)}</strong>}</div>{canWrite&&<button className="small-button" onClick={onEdit}>Editar</button>}</div>
   <div className="cometa-store-contents"><div className={'cometa-silo-visual'+(isBag?' is-bag':'')} role="img" aria-label={storeLabel(store)+': '+tonnes(total)+(percent===null?(isBag?', sin carga registrada':', capacidad sin definir'):', '+label+(isBag?' de la carga de referencia':' de capacidad ocupada'))}>
    <svg viewBox={isBag?'0 0 180 110':'0 0 140 180'} aria-hidden="true"><defs><clipPath id={clipId}><path d={shape}/></clipPath><pattern id={clipId+'-unknown'} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="white" strokeWidth="3"/></pattern></defs><path d={shape} fill="#eef3f4"/>
     <g clipPath={'url(#'+clipId+')'}>{cropsList.map(crop=>{const segment=total?crop.tonnes/total*visibleHeight:0;filled+=segment;return <rect key={crop.name} x={isBag?0:26} y={bottom-filled} width={isBag?180:88} height={segment} fill={cropColor(crop.name)} opacity={unknownFill?0.45:1}/>})}{unknownFill&&<rect x={isBag?0:26} y={bottom-height} width={isBag?180:88} height={height} fill={'url(#'+clipId+'-unknown)'} opacity="0.65"/>}</g>

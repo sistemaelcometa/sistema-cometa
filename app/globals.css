@@ -2984,6 +2984,7 @@ button:disabled {
 .cometa-store-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,340px),1fr)); gap: 16px; min-width: 0; }
 .cometa-store-card { display: grid; align-content: start; gap: 14px; min-width: 0; overflow-wrap: anywhere; }
 .cometa-store-card h4 { margin: 6px 0 0; }
+.cometa-bag-number { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 6px; background: #e4eff6; color: #245778; font-size: 13px; }
 .cometa-storage-group { display: grid; gap: 16px; min-width: 0; }
 .cometa-storage-group > .section-title { margin: 0; }
 .cometa-storage-group > .section-title h4 { margin: 0; font-size: 18px; font-weight: 800; }

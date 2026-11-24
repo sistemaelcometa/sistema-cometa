@@ -6,7 +6,7 @@ import {CometaStorage} from "./cometa-storage";
 import {CometaFieldManager} from "./cometa-field-manager";
 import {supabase} from "@/lib/supabase/client";
 import {argentinaDay} from "@/lib/argentina-day";
-import {emptyGrain,parseTonnes,tonnes,storeLabel,harvestLabel,hectaresLabel,yieldLabel,groupGrainEvents,grainEventName,harvestCropTotals,storageCropTotals} from "@/lib/cometa-grain";
+import {emptyGrain,parseTonnes,tonnes,storeLabel,bagNumberLabel,harvestLabel,hectaresLabel,yieldLabel,groupGrainEvents,grainEventName,harvestCropTotals,storageCropTotals} from "@/lib/cometa-grain";
 import type {GrainData,GrainStore,GrainField} from "@/lib/cometa-grain";
 import type {CometaContact} from "@/lib/cometa-contacts";
 
@@ -85,7 +85,7 @@ function GrainForm({form,editing,data,organization,onClose,onSaved,onStoreCreate
    rpc='save_cometa_field';args={target_organization_id:organization,entry_name:name.trim(),entry_hectares:area,target_field_id:editing?.id||null};
   }else if(form==='store'){
    const cap=storeKind==='silo'&&capacity.trim()?parseTonnes(capacity):null;if(storeKind==='silo'&&capacity.trim()&&cap===null){setError('Revisá la capacidad: usá toneladas positivas, con hasta 3 decimales.');return}
-   rpc='configure_cometa_grain';args={target_organization_id:organization,entry_kind:storeKind,entry_name:name.trim(),entry_location:location.trim(),entry_capacity:cap,target_id:editing?.id||null};
+   rpc='save_cometa_grain_store';args={target_organization_id:organization,entry_kind:storeKind,entry_name:name.trim(),entry_location:location.trim(),entry_capacity:cap,target_id:editing?.id||null};
   }else{
    if(parsed===null){setError('Ingresá toneladas mayores a cero, con hasta 3 decimales y sin separador de miles.');return}
    if(form==='harvest'){
@@ -95,13 +95,17 @@ function GrainForm({form,editing,data,organization,onClose,onSaved,onStoreCreate
    }
    const signature=JSON.stringify(args);if(attempt.current?.signature!==signature)attempt.current={signature,id:crypto.randomUUID()};args.operation_id=attempt.current.id;
   }
+  if(form==='store'&&!editing){
+   const signature=JSON.stringify(args);if(attempt.current?.signature!==signature)attempt.current={signature,id:crypto.randomUUID()};args.operation_id=attempt.current.id;
+  }
   working.current=true;setBusy(true);
-  try{const result=await supabase.rpc(rpc,args);if(result.error)throw result.error;onSaved(form==='store'?{id:String(result.data),name:name.trim(),location:location.trim(),kind:storeKind,capacity:args.entry_capacity as number|null}:undefined)}catch(err){setError(message(err))}finally{working.current=false;setBusy(false)}
+  try{const result=await supabase.rpc(rpc,args);if(result.error)throw result.error;onSaved(form==='store'?result.data as GrainStore:undefined)}catch(err){setError(message(err))}finally{working.current=false;setBusy(false)}
  }
  return <><div className="modal-backdrop stacked-modal"><section className={"modal wide-modal cometa-grain-modal"+(form==='field'?' cometa-field-modal':'')} role="dialog" aria-modal="true" aria-label={title}><div className="section-title"><h3>{title}</h3><button className="icon-button" disabled={busy} onClick={onClose} aria-label="Cerrar">X</button></div><form autoComplete="off" className="modal-form" onSubmit={save}><fieldset disabled={busy} className="cometa-form-fields"><div className={"form-grid compact-form-grid"+(form==='field'?' cometa-field-grid':'')}>
   {(form==='field'||form==='store')&&<label>Nombre<input autoComplete="off" required maxLength={120} value={name} placeholder={form==='field'?'Ej.: Lote 1':undefined} onChange={event=>setName(event.target.value)}/></label>}
+  {form==='store'&&editing&&'kind' in editing&&bagNumberLabel(editing)&&<p className="form-wide">Número interno: <strong>{bagNumberLabel(editing)}</strong></p>}
   {form==='field'&&<><label>Superficie (hectáreas)<input autoComplete="off" inputMode="decimal" value={hectares} onChange={event=>setHectares(event.target.value)} placeholder="Ej.: 25,5" aria-describedby={scope+'-area-help'}/></label><small id={scope+'-area-help'} className="form-wide cometa-field-help">La superficie es opcional. Permite calcular el rendimiento en toneladas por hectárea.</small></>}
-  {form==='store'&&<><label>Ubicación<input autoComplete="off" required maxLength={120} value={location} onChange={event=>setLocation(event.target.value)} placeholder="Casa, Fenoglio, Freyre..."/></label><label>Tipo<select aria-label="Tipo" disabled={initialStoreKind==='bag'} value={storeKind} onChange={event=>setStoreKind(event.target.value as 'silo'|'bag')}><option value="silo">Silo</option><option value="bag">Silo bolsa</option></select></label>{storeKind==='silo'&&<label>Capacidad en toneladas (opcional)<input autoComplete="off" inputMode="decimal" value={capacity} onChange={event=>setCapacity(event.target.value)} placeholder="Sin definir"/></label>}{storeKind==='bag'&&<p className="form-wide">El 100% de esta bolsa se calculará automáticamente con la mercadería que cargues.</p>}</>}
+  {form==='store'&&<><label>Ubicación<input autoComplete="off" required maxLength={120} value={location} onChange={event=>setLocation(event.target.value)} placeholder="Casa, Fenoglio, Freyre..."/></label><label>Tipo<select aria-label="Tipo" disabled={!!editing||initialStoreKind==='bag'} value={storeKind} onChange={event=>setStoreKind(event.target.value as 'silo'|'bag')}><option value="silo">Silo</option><option value="bag">Silo bolsa</option></select></label>{storeKind==='silo'&&<label>Capacidad en toneladas (opcional)<input autoComplete="off" inputMode="decimal" value={capacity} onChange={event=>setCapacity(event.target.value)} placeholder="Sin definir"/></label>}{storeKind==='bag'&&<p className="form-wide">Cada bolsa nueva recibe un número interno propio, aunque uses un nombre repetido. El 100% se calcula con la mercadería que cargues.</p>}</>}
   {form==='harvest'&&<><label>Lote<select aria-label="Lote" required value={field} onChange={event=>setField(event.target.value)}><option value="">Elegir lote</option>{fields.map(row=><option key={row.id} value={row.id}>{row.name}</option>)}</select></label><label>Campaña<select aria-label="Campaña" required value={campaign} onChange={event=>setCampaign(event.target.value)}>{campaigns.map(value=><option key={value} value={value}>{value}</option>)}</select></label><label>Cultivo<input autoComplete="off" required maxLength={80} list={scope+'-crops'} value={crop} onChange={event=>changeCrop(event.target.value)}/></label><datalist id={scope+'-crops'}>{['Maíz','Soja','Trigo'].map(value=><option key={value} value={value}/>)}</datalist><label>Tipo de cosecha<select aria-label="Tipo de cosecha" required value={season} onChange={event=>setSeason(event.target.value)}><option value="">Elegí un cultivo</option><option value="fina">Fina</option><option value="gruesa">Gruesa</option></select></label><label>Cantidad cosechada (toneladas)<input autoComplete="off" inputMode="decimal" required value={amount} onChange={event=>setAmount(event.target.value)} placeholder="Ej.: 25,500"/></label><label>Fecha<input type="date" required value={date} onChange={event=>setDate(event.target.value)}/></label></>}
   {form==='harvest'&&field&&<p className="form-wide">Superficie: {hectaresLabel(fields.find(row=>row.id===field)?.hectares)} · Rendimiento: {yieldLabel(parseTonnes(amount)||0,fields.find(row=>row.id===field)?.hectares)}</p>}
  </div>
