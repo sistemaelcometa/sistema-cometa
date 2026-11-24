@@ -86,7 +86,7 @@ export function CometaWorkspace(){
  function clearFilters(){setFrom("");setTo("");setKind("");setCategory("");setCurrency("");setSearch("");setQuery("");setShowDates(false)}
  return <div className="page-stack cometa-workspace">
   <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div></header>
-  <nav className="segmented-control cometa-section-tabs" aria-label="Secciones de El Cometa">{[{id:"movements",label:"Caja"},{id:"harvest",label:"Cosechas"},{id:"storage",label:"Acopios"},{id:"contacts",label:"Contactos"}].map(item=><button key={item.id} type="button" className={section===item.id?"active":""} aria-pressed={section===item.id} onClick={()=>{setSection(item.id);setShowDates(false);if(item.id==="contacts")contactData.reload()}}>{item.label}</button>)}</nav>
+  <nav className="segmented-control cometa-section-tabs" aria-label="Secciones de El Cometa">{[{id:"movements",label:"Caja"},{id:"harvest",label:"Cosecha"},{id:"storage",label:"Acopio"},{id:"contacts",label:"Contactos"}].map(item=><button key={item.id} type="button" className={section===item.id?"active":""} aria-pressed={section===item.id} onClick={()=>{setSection(item.id);setShowDates(false);if(item.id==="contacts")contactData.reload()}}>{item.label}</button>)}</nav>
   {(section==="harvest"||section==="storage")&&organization&&<CometaGrain key={organization+section} organization={organization} canWrite={canWrite} view={section} contacts={contactData.contacts} contactError={contactData.error}/>}
   {section==="contacts"&&organization&&<CometaContacts key={organization} organization={organization} canWrite={canWrite} {...contactData} onChanged={contactData.reload}/>}
   {section==="movements"&&<>
