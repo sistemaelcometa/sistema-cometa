@@ -10,6 +10,20 @@ Los importes admiten centavos. Pesos argentinos y dolares se muestran por separa
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
 
+## Traslados y liquidacion de stock
+
+Aplicar `083_cometa_clear_stock.sql` despues de `081_cometa_multi_source_extractions.sql`.
+En Acopio, **Trasladar mercaderia** permite mover una o varias partidas entre silos fijos
+y silos bolsa. **Usar todo el stock del silo** completa todas sus partidas; el traslado
+conserva lote, cultivo, campana y toneladas totales, y deja el origen en cero si se mueve todo.
+
+**Liquidar stock** da de baja todo el remanente de un almacenamiento, con fecha y motivo.
+La operacion comprueba el saldo mostrado bajo el mismo bloqueo que los otros movimientos
+de grano, para evitar liquidar silenciosamente un stock que cambio en otra sesion.
+El historial la identifica como Liquidacion de stock y agrupa sus partidas. Se puede anular
+completa si no tiene operaciones posteriores. Los reintentos conservan su identidad y no
+duplican la baja. No borra cosechas, silos ni historial, y no genera dinero en Caja.
+
 ## Proveedores y compradores
 
 Aplicar `082_cometa_contacts.sql` despues de `077_cometa_suppliers.sql`.
