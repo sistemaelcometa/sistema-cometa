@@ -2944,6 +2944,8 @@ button:disabled {
 .cometa-movements-table th { color: var(--brand-blue); }
 .cometa-suppliers-table th { color: var(--brand-blue); }
 .cometa-suppliers-table { min-width: 600px; }
+.cometa-contact-filters { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+.cometa-contact-filters .field { flex: 1 1 220px; min-width: 0; }
 .cometa-section-tabs { justify-self: start; max-width: 100%; grid-template-columns: repeat(4,minmax(0,1fr)); }
 .cometa-cash-actions { justify-content: flex-end; }
 .cometa-cash-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }

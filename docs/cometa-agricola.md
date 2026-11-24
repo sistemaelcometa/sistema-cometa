@@ -10,6 +10,20 @@ Los importes admiten centavos. Pesos argentinos y dolares se muestran por separa
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
 
+## Proveedores y compradores
+
+Aplicar `082_cometa_contacts.sql` despues de `077_cometa_suppliers.sql`.
+La seccion **Contactos** unifica proveedores y compradores. Cada persona o empresa tiene
+un solo registro con tipo Proveedor, Comprador o Proveedor y comprador. Los proveedores
+existentes conservan su identificador y quedan como Proveedor; se puede editar su tipo.
+La unicidad del nombre se mantiene entre todos los tipos dentro de cada organizacion.
+
+En Caja, los egresos sugieren proveedores y los ingresos compradores; los de ambos tipos
+aparecen en las dos listas. Las ventas directas desde cosecha y las extracciones de grano
+tambien ofrecen los contactos como destinos, incluyendo entregas a proveedores.
+Siempre se puede escribir un nombre o detalle manualmente. Archivar o editar un contacto
+no modifica el nombre historico de los movimientos ni genera movimientos de dinero.
+
 ## Comprobantes y descarga mensual
 
 Aplicar tambien `075_cometa_receipt_archives.sql`.

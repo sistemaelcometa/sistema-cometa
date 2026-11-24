@@ -3,8 +3,9 @@
 import * as React from "react";
 import {Camera,Download,FileUp,Trash2} from "lucide-react";
 import {CometaReceiptArchive,CometaAttachReceipt} from "./cometa-receipt-archive";
-import {CometaSuppliers,useCometaSuppliers} from "./cometa-suppliers";
-import type {CometaSupplier} from "./cometa-suppliers";
+import {CometaContacts,useCometaContacts} from "./cometa-contacts";
+import {contactsForMovement} from "@/lib/cometa-contacts";
+import type {CometaContact} from "@/lib/cometa-contacts";
 import {CometaGrain} from "./cometa-grain";
 import {useActiveMembership} from "./auth-gate";
 import {supabase} from "@/lib/supabase/client";
@@ -25,7 +26,7 @@ const palette=["#91b5d0","#b6d7a8","#f3d58b","#c3b4db","#e8b4a3","#97c9be","#c7c
 export function CometaWorkspace(){
  const membership=useActiveMembership(),organization=membership?.organization_id,canWrite=!!membership&&membership.role!=="viewer";
  const [section,setSection]=React.useState("movements");
- const supplierData=useCometaSuppliers(organization);
+ const contactData=useCometaContacts(organization);
  const [report,setReport]=React.useState<Report>(emptyReport),[loading,setLoading]=React.useState(false),[error,setError]=React.useState("");
  const [from,setFrom]=React.useState(""),[to,setTo]=React.useState(""),[kind,setKind]=React.useState(""),[category,setCategory]=React.useState(""),[currency,setCurrency]=React.useState(""),[search,setSearch]=React.useState(""),[query,setQuery]=React.useState(""),[page,setPage]=React.useState(1),[refresh,setRefresh]=React.useState(0);
  const [formKind,setFormKind]=React.useState<"income"|"expense"|null>(null),[deleting,setDeleting]=React.useState<Movement|null>(null),[deletingBusy,setDeletingBusy]=React.useState(false),[ready,setReady]=React.useState<string|null>(null);
@@ -85,9 +86,9 @@ export function CometaWorkspace(){
  function clearFilters(){setFrom("");setTo("");setKind("");setCategory("");setCurrency("");setSearch("");setQuery("");setShowDates(false)}
  return <div className="page-stack cometa-workspace">
   <header className="page-header"><div><h2>El Cometa</h2><p>Actividad agrícola</p></div></header>
-  <nav className="segmented-control cometa-section-tabs" aria-label="Secciones de El Cometa">{[{id:"movements",label:"Caja"},{id:"harvest",label:"Cosechas"},{id:"storage",label:"Acopios"},{id:"suppliers",label:"Proveedores"}].map(item=><button key={item.id} type="button" className={section===item.id?"active":""} aria-pressed={section===item.id} onClick={()=>{setSection(item.id);setShowDates(false);if(item.id==="suppliers")supplierData.reload()}}>{item.label}</button>)}</nav>
-  {(section==="harvest"||section==="storage")&&organization&&<CometaGrain key={organization+section} organization={organization} canWrite={canWrite} view={section}/>}
-  {section==="suppliers"&&organization&&<CometaSuppliers key={organization} organization={organization} canWrite={canWrite} {...supplierData} onChanged={supplierData.reload}/>}
+  <nav className="segmented-control cometa-section-tabs" aria-label="Secciones de El Cometa">{[{id:"movements",label:"Caja"},{id:"harvest",label:"Cosechas"},{id:"storage",label:"Acopios"},{id:"contacts",label:"Contactos"}].map(item=><button key={item.id} type="button" className={section===item.id?"active":""} aria-pressed={section===item.id} onClick={()=>{setSection(item.id);setShowDates(false);if(item.id==="contacts")contactData.reload()}}>{item.label}</button>)}</nav>
+  {(section==="harvest"||section==="storage")&&organization&&<CometaGrain key={organization+section} organization={organization} canWrite={canWrite} view={section} contacts={contactData.contacts} contactError={contactData.error}/>}
+  {section==="contacts"&&organization&&<CometaContacts key={organization} organization={organization} canWrite={canWrite} {...contactData} onChanged={contactData.reload}/>}
   {section==="movements"&&<>
   <div className="cometa-cash-toolbar"><div className="inline-actions"><button className="secondary-button" type="button" aria-expanded={showFilters} aria-controls="cometa-cash-filters" onClick={()=>{setShowFilters(value=>!value);setShowDates(false)}}>{showFilters?"Ocultar filtros":"Buscar y filtrar"}{activeFilters>0&&<span className="cometa-filter-count" aria-label={activeFilters+" filtros activos"}>{activeFilters}</span>}</button>{activeFilters>0&&<button className="small-button" type="button" onClick={clearFilters}>Limpiar filtros</button>}</div><div className="inline-actions cometa-cash-actions"><button className="secondary-button danger-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("expense")}>Registrar egreso</button><button className="secondary-button success-outline-button" disabled={!canWrite||!ready} onClick={()=>setFormKind("income")}>Registrar ingreso</button>{canWrite&&organization&&<CometaReceiptArchive organization={organization} onChanged={()=>setRefresh(value=>value+1)}/>}</div></div>
   {showFilters&&<section id="cometa-cash-filters" className="panel cometa-filters" aria-label="Filtros de movimientos">
@@ -110,13 +111,13 @@ export function CometaWorkspace(){
    {pages>1&&<div className="table-pagination"><span>Página {page} de {pages}</span><div className="inline-actions"><button className="secondary-button compact-action" disabled={page<=1||loading} onClick={()=>setPage(value=>value-1)}>Anterior</button><button className="secondary-button compact-action" disabled={page>=pages||loading} onClick={()=>setPage(value=>value+1)}>Siguiente</button></div></div>}
   </section>
   </>}
-  {formKind&&organization&&<CometaMovementModal kind={formKind} organization={organization} categories={report.categories.filter(item=>item.kind===formKind)} suppliers={supplierData.suppliers} supplierError={supplierData.error} onClose={()=>setFormKind(null)} onSaved={()=>{setFormKind(null);setRefresh(value=>value+1)}}/>}
+  {formKind&&organization&&<CometaMovementModal kind={formKind} organization={organization} categories={report.categories.filter(item=>item.kind===formKind)} contacts={contactData.contacts} contactError={contactData.error} onClose={()=>setFormKind(null)} onSaved={()=>{setFormKind(null);setRefresh(value=>value+1)}}/>}
   {attaching&&organization&&<CometaAttachReceipt organization={organization} movementId={attaching.id} onClose={()=>setAttaching(null)} onSaved={()=>{setAttaching(null);setRefresh(value=>value+1)}}/>}
   {deleting&&<div className="modal-backdrop stacked-modal"><section className="modal" role="dialog" aria-modal="true" aria-label="Anular movimiento"><h3>Anular movimiento</h3><p>{deleting.concept} · {money(deleting.amount,deleting.currency)}</p><p>Se quitará del saldo y del gráfico. El comprobante y la auditoría quedan conservados.</p><div className="modal-actions"><button className="secondary-button" disabled={deletingBusy} onClick={()=>setDeleting(null)}>Cancelar</button><button className="primary-button danger-confirm-button" disabled={deletingBusy} onClick={remove}>{deletingBusy?"Anulando...":"Anular movimiento"}</button></div></section></div>}
  </div>;
 }
 
-export function CometaMovementModal({kind,organization,categories,suppliers=[],supplierError="",onClose,onSaved}:{kind:"income"|"expense";organization:string;categories:Category[];suppliers?:CometaSupplier[];supplierError?:string;onClose:()=>void;onSaved:()=>void}){
+export function CometaMovementModal({kind,organization,categories,contacts=[],contactError="",onClose,onSaved}:{kind:"income"|"expense";organization:string;categories:Category[];contacts?:CometaContact[];contactError?:string;onClose:()=>void;onSaved:()=>void}){
  const [scope]=React.useState(()=>crypto.randomUUID()),[date,setDate]=React.useState(argentinaDay),[category,setCategory]=React.useState(""),[currency,setCurrency]=React.useState("ARS"),[amount,setAmount]=React.useState(""),[concept,setConcept]=React.useState(""),[party,setParty]=React.useState(""),[number,setNumber]=React.useState(""),[notes,setNotes]=React.useState("");
  const [file,setFile]=React.useState<File|null>(null),[busy,setBusy]=React.useState(false),[reading,setReading]=React.useState(false),[error,setError]=React.useState(""),[aiEnabled,setAiEnabled]=React.useState(false),[draft,setDraft]=React.useState(false),[reviewed,setReviewed]=React.useState(false),[warnings,setWarnings]=React.useState<string[]>([]);
  const working=React.useRef(false),attempt=React.useRef<{signature:string;id:string}|null>(null),camera=React.useRef<HTMLInputElement>(null),upload=React.useRef<HTMLInputElement>(null);
@@ -186,8 +187,8 @@ export function CometaMovementModal({kind,organization,categories,suppliers=[],s
    <label>Moneda<select autoComplete="off" name={field("currency")} required value={currency} onChange={event=>change(setCurrency,event.target.value)}><option value="">Seleccionar moneda</option><option value="ARS">Pesos argentinos</option><option value="USD">Dólares</option></select></label>
    <label>Importe<input type="text" inputMode="decimal" autoComplete="off" name={field("amount")} required placeholder="0,00" value={amount} onChange={event=>change(setAmount,event.target.value)} onBlur={()=>{const value=parsePdeExpenseAmount(amount);if(value!==null)setAmount(formatPdeExpenseInput(value))}}/></label>
    <label className="form-wide">Concepto<input autoComplete="off" name={field("concept")} required maxLength={500} value={concept} onChange={event=>change(setConcept,event.target.value)}/></label>
-   <label>{kind==="income"?"Cliente / comprador":"Proveedor"}<input autoComplete="off" name={field("party")} list={kind==="expense"?field("suppliers"):undefined} maxLength={200} value={party} onChange={event=>change(setParty,event.target.value)} placeholder={kind==="expense"?"Escribí para buscar un proveedor":undefined}/></label>{kind==="expense"&&<datalist id={field("suppliers")}>{suppliers.map(supplier=><option key={supplier.id} value={supplier.name}>{supplier.tax_id||supplier.contact}</option>)}</datalist>}
-   {kind==="expense"&&supplierError&&<p className="warning-box form-wide">No se pudieron cargar las sugerencias de proveedores. Podés escribir el nombre manualmente.</p>}
+   <label>{kind==="income"?"Cliente / comprador":"Proveedor"}<input autoComplete="off" name={field("party")} list={field("contacts")} maxLength={200} value={party} onChange={event=>change(setParty,event.target.value)} placeholder={kind==="expense"?"Escribí para buscar un proveedor":"Escribí para buscar un comprador"}/></label><datalist id={field("contacts")}>{contactsForMovement(contacts,kind).map(contact=><option key={contact.id} value={contact.name}>{contact.tax_id||contact.contact}</option>)}</datalist>
+   {contactError&&<p className="warning-box form-wide">No se pudieron cargar las sugerencias de contactos. Podés escribir el nombre manualmente.</p>}
    <label>Número de factura<input autoComplete="off" name={field("number")} maxLength={100} value={number} onChange={event=>change(setNumber,event.target.value)}/></label>
    <label className="form-wide">Observaciones<textarea autoComplete="off" name={field("notes")} rows={3} maxLength={4000} value={notes} onChange={event=>change(setNotes,event.target.value)}/></label>
   </div>{draft&&<label className="checkbox-line"><input type="checkbox" checked={reviewed} onChange={event=>setReviewed(event.target.checked)}/>Revisé los datos con la factura y confirmo que son correctos.</label>}
