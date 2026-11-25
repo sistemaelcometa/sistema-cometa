@@ -20,9 +20,29 @@ export const hectaresLabel=(value?:number|null)=>Number(value)>0?new Intl.Number
 export function harvestYield(amount:number,area?:number|null){
  return Number.isFinite(Number(amount))&&Number.isFinite(Number(area))&&Number(area)>0?Number(amount)*10/Number(area):null;
 }
-export const yieldLabel=(amount:number,area?:number|null)=>{const value=harvestYield(amount,area);return value===null?'—':new Intl.NumberFormat('es-AR',{maximumFractionDigits:3}).format(value)+' qq/ha'};
+export const yieldLabel=(amount:number,area?:number|null)=>{const value=harvestYield(amount,area);return value===null?'—':new Intl.NumberFormat('es-AR',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value)+' qq/ha'};
 export const bagNumberLabel=(store:GrainStore)=>store.kind==='bag'&&store.bag_number?'SB-'+String(store.bag_number).padStart(4,'0'):'';
 export const storeLabel=(store?:GrainStore)=>store?[store.location,store.name,bagNumberLabel(store)].filter(Boolean).join(' · '):'Venta directa';
+export function grainStoreSummary(store:GrainStore,data:GrainData){
+ const harvests=new Map(data.harvests.map(row=>[row.id,row])),crops=new Map<string,{name:string;kg:number}>();let totalKg=0;
+ for(const balance of data.balances){
+  if(balance.store_id!==store.id)continue;
+  const harvest=harvests.get(balance.harvest_id),kg=Math.round(Number(balance.tonnes)*1000);
+  if(harvest?.voided||!Number.isFinite(kg)||kg<=0)continue;
+  const name=harvest?.crop.trim()||'Cultivo sin especificar',key=name.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''),previous=crops.get(key);
+  const known:Record<string,string>={maiz:'Maíz',soja:'Soja',trigo:'Trigo'};
+  crops.set(key,{name:previous?.name||known[key]||name,kg:(previous?.kg||0)+kg});totalKg+=kg;
+ }
+ const capacity=store.kind==='silo'&&Number.isFinite(Number(store.capacity))&&Number(store.capacity)>0?Math.round(Number(store.capacity)*1000):null;
+ return {total:totalKg/1000,crops:Array.from(crops.values()).sort((a,b)=>a.name.localeCompare(b.name,'es')).map(crop=>({name:crop.name,tonnes:crop.kg/1000})),free:capacity===null?null:Math.max(0,capacity-totalKg)/1000,excess:capacity===null?0:Math.max(0,totalKg-capacity)/1000};
+}
+export function storeStockDescription(store:GrainStore|undefined,data:GrainData){
+ if(!store)return '';
+ const summary=grainStoreSummary(store,data),contents=summary.crops.length?summary.crops.map(crop=>crop.name+': '+tonnes(crop.tonnes)).join(' · '):'Sin existencias · 0 t';
+ const space=summary.free!==null?(summary.excess>0?'Exceso de capacidad: '+tonnes(summary.excess):'Libre: '+tonnes(summary.free)):store.kind==='silo'?'Capacidad sin definir':'';
+ return [contents,space].filter(Boolean).join(' · ');
+}
+export const storeOptionLabel=(store:GrainStore,data:GrainData)=>storeLabel(store)+' — '+storeStockDescription(store,data);
 export const harvestLabel=(harvest?:Harvest)=>harvest?harvest.field_name+' · '+harvest.crop+' · '+harvest.campaign+(harvest.season?' · '+(harvest.season==='fina'?'Fina':'Gruesa'):''):'';
 export function grainEventName(event:GrainEvent){
  return event.request?.stock_clear?'Liquidación de stock':({deposit:'Ingreso de cosecha',direct_sale:'Venta directa desde cosecha',sale:'Extracción de mercadería',transfer:'Traslado'})[event.kind];
