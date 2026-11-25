@@ -11,6 +11,22 @@ Los filtros se aplican tanto a la tabla como a los totales y al grafico; la pagi
 Los movimientos anulados conservan el comprobante y la auditoria.
 El rendimiento de Cosecha se muestra en quintales por hectarea (qq/ha): toneladas x 10 / hectareas.
 
+Al registrar una cosecha, Tipo de destino separa Silo fijo, Silo bolsa y Venta directa.
+Cada almacenamiento lista solo los destinos activos del tipo elegido. Cambiar de tipo
+limpia la seleccion anterior y conserva las cantidades; se pueden combinar destinos.
+
+## Limpieza puntual de pruebas anuladas de grano
+
+Ejecutar manualmente `supabase/maintenance/cleanup_voided_cometa_grain.sql` en Supabase.
+Este script no es una migracion ni se ejecuta con el despliegue. Quita del historial
+los eventos anulados y las cosechas cuyos movimientos quedaron todos anulados.
+Conserva Caja, lotes, silos, numeros internos, movimientos validos y stock por partida.
+Guarda los registros retirados en `cometa_grain_cleanup_archive`, con acceso restringido,
+y bloquea reintentos antiguos para que no vuelvan a crear operaciones de prueba limpiadas.
+Si hay una sola organizacion con historial agricola se elige automaticamente; si hay
+varias, requiere completar `chosen_organization` en el script. La transaccion comprueba
+el stock antes y despues y devuelve las cantidades de movimientos y cosechas retiradas.
+
 ## Eliminar bolsas vacias
 
 Aplicar `086_cometa_delete_empty_bags.sql` despues de `085_cometa_archive_empty_bags.sql`.
