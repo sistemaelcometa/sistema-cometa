@@ -10,6 +10,9 @@ Los importes admiten centavos. Pesos argentinos y dolares se muestran por separa
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
 El rendimiento de Cosecha se muestra en quintales por hectarea (qq/ha): toneladas x 10 / hectareas.
+Al entrar en Cosecha, el filtro elige la campana mas reciente con cosechas vigentes.
+Se puede cambiar a otra campana o a Todas; la eleccion manual se conserva al recargar datos.
+Cultivo usa un selector como los demas campos: Maiz, Soja y Trigo, con tipo de cosecha automatico.
 
 Al registrar una cosecha, Tipo de destino separa Silo fijo, Silo bolsa y Venta directa.
 Cada almacenamiento lista solo los destinos activos del tipo elegido. Cambiar de tipo
