@@ -1,9 +1,15 @@
 export type GrainField={id:string;name:string;hectares?:number|null;deleted_at?:string|null};
-export type GrainStore={id:string;location:string;name:string;kind:'silo'|'bag';capacity:number|null;bag_number?:number|null};
+export type GrainStore={id:string;location:string;name:string;kind:'silo'|'bag';capacity:number|null;bag_number?:number|null;archived?:boolean};
 export type Harvest={id:string;field_id:string;field_name:string;field_hectares?:number|null;harvest_date:string;campaign:string;season?:'fina'|'gruesa'|null;crop:string;tonnes:number;voided:boolean};
 export type GrainEvent={id:string;operation_id:string;harvest_id:string;event_date:string;kind:'deposit'|'direct_sale'|'sale'|'transfer';source_id:string|null;destination_id:string|null;tonnes:number;recipient:string;reference:string;voided_at:string|null;request?:{batch_exit?:boolean;stock_clear?:boolean}|null;sequence?:number;created_at?:string};
 export type GrainData={fields:GrainField[];stores:GrainStore[];harvests:Harvest[];balances:{harvest_id:string;store_id:string;tonnes:number}[];events:GrainEvent[]};
 export const emptyGrain:GrainData={fields:[],stores:[],harvests:[],balances:[],events:[]};
+export function isStoreArchived(store:GrainStore,data:GrainData){
+ if(store.kind!=='bag')return false;
+ if(store.archived!==undefined)return store.archived;
+ return !data.balances.some(row=>row.store_id===store.id&&Number(row.tonnes)>0)&&data.events.some(row=>row.destination_id===store.id&&!row.voided_at);
+}
+export const availableGrainStores=(data:GrainData)=>data.stores.filter(store=>!isStoreArchived(store,data));
 export function parseTonnes(value:string){
  const text=value.trim().replace(',','.');
  if(!/^\d+(?:\.\d{1,3})?$/.test(text))return null;

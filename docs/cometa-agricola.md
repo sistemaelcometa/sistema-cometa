@@ -10,6 +10,19 @@ Los importes admiten centavos. Pesos argentinos y dolares se muestran por separa
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
 
+## Bolsas archivadas automaticamente
+
+Aplicar `085_cometa_archive_empty_bags.sql` despues de `084_cometa_bag_numbers.sql`.
+Una bolsa con entradas validas y saldo cero queda archivada automaticamente. Desaparece
+de los destinos disponibles de cosechas y traslados, y de las tarjetas activas de Acopio.
+Se conserva en **Silos bolsa archivados** y en el historial, con su numero permanente.
+Las bolsas nuevas sin entradas y los silos fijos vacios siguen disponibles.
+
+Supabase tambien rechaza nuevas cargas a bolsas archivadas, incluso desde pestañas antiguas.
+El estado se calcula con los movimientos validos, por lo que anular una salida que restaura
+existencias vuelve a activar la bolsa. Anular una primera carga erronea la deja sin uso.
+No se borran movimientos, cosechas ni archivos y no se registra dinero en Caja.
+
 ## Identidad de silos bolsa
 
 Aplicar `084_cometa_bag_numbers.sql` para numerar las bolsas existentes y nuevas.

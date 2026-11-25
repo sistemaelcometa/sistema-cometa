@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import {bagReferenceTonnes,bagNumberLabel,harvestLabel,storeLabel,tonnes} from "@/lib/cometa-grain";
+import {availableGrainStores,isStoreArchived,bagReferenceTonnes,bagNumberLabel,harvestLabel,storeLabel,tonnes} from "@/lib/cometa-grain";
 import type {GrainData,GrainStore} from "@/lib/cometa-grain";
 
 const cropColors=['#98bd7c','#e3c16c','#84b9d3','#bb9acd','#d4967b','#7db8a8'];
@@ -8,11 +8,12 @@ const cropKey=(crop:string)=>crop.trim().toLocaleLowerCase().normalize('NFD').re
 function cropColor(crop:string){const key=cropKey(crop),known:Record<string,string>={soja:'#98bd7c',maiz:'#e3c16c',trigo:'#d4967b',girasol:'#bb9acd',sorgo:'#84b9d3'};if(known[key])return known[key];let hash=0;for(const letter of key)hash=(hash*31+letter.charCodeAt(0))>>>0;return cropColors[hash%cropColors.length]}
 
 export function CometaStorage({data,canWrite,onEdit}:{data:GrainData;canWrite:boolean;onEdit:(store:GrainStore)=>void}){
+ const archived=data.stores.filter(store=>isStoreArchived(store,data));
  return <>{([{kind:'silo',title:'Silos fijos'},{kind:'bag',title:'Silos bolsa'}] as const).map(group=>{
-  const stores=data.stores.filter(store=>store.kind===group.kind),ids=new Set(stores.map(store=>store.id));
+  const stores=availableGrainStores(data).filter(store=>store.kind===group.kind),ids=new Set(stores.map(store=>store.id));
   const total=data.balances.filter(row=>ids.has(row.store_id)).reduce((sum,row)=>sum+Number(row.tonnes),0);
-  return <section className="cometa-storage-group" aria-label={group.title} key={group.kind}><div className="section-title"><h4>{group.title}</h4><strong>{tonnes(total)} almacenadas</strong></div>{group.kind==='bag'&&<p className="cometa-bag-help">El 100% corresponde a la carga de referencia de cada bolsa. Si la llenás en varias veces, se toma la mayor cantidad almacenada; las extracciones reducen el porcentaje.</p>}{stores.length===0?<p className="empty-state">{group.kind==='bag'?'Todavía no hay silos bolsa. Podés crearlos al registrar una cosecha.':'Todavía no hay silos fijos.'}</p>:<div className="cometa-store-grid">{stores.map(store=><GrainStoreCard key={store.id} store={store} data={data} canWrite={canWrite} onEdit={()=>onEdit(store)}/>)}</div>}</section>;
- })}</>;
+  return <section className="cometa-storage-group" aria-label={group.title} key={group.kind}><div className="section-title"><h4>{group.title}</h4><strong>{tonnes(total)} almacenadas</strong></div>{group.kind==='bag'&&<p className="cometa-bag-help">El 100% corresponde a la carga de referencia de cada bolsa. Si la llenás en varias veces, se toma la mayor cantidad almacenada; las extracciones reducen el porcentaje.</p>}{stores.length===0?<p className="empty-state">{group.kind==='bag'?'No hay silos bolsa activos. Podés crear uno al registrar una cosecha.':'Todavía no hay silos fijos.'}</p>:<div className="cometa-store-grid">{stores.map(store=><GrainStoreCard key={store.id} store={store} data={data} canWrite={canWrite} onEdit={()=>onEdit(store)}/>)}</div>}</section>;
+ })}{archived.length>0&&<details className="cometa-origin-details"><summary>Silos bolsa archivados ({archived.length})</summary><div className="cometa-lot-list cometa-manager-list">{archived.map(store=><div key={store.id}><span><strong>{storeLabel(store)}</strong><small className="payment-allocation-detail">Archivada · Sin existencias</small></span></div>)}</div></details>}</>;
 }
 
 function GrainStoreCard({store,data,canWrite,onEdit}:{store:GrainStore;data:GrainData;canWrite:boolean;onEdit:()=>void}){
