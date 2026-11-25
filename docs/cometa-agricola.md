@@ -9,6 +9,18 @@ Gastos de comercializacion, Reparaciones, Gastos varios, Alquileres y Seguros.
 Los importes admiten centavos. Pesos argentinos y dolares se muestran por separado sin conversion.
 Los filtros se aplican tanto a la tabla como a los totales y al grafico; la paginacion afecta solo a las filas.
 Los movimientos anulados conservan el comprobante y la auditoria.
+El rendimiento de Cosecha se muestra en quintales por hectarea (qq/ha): toneladas x 10 / hectareas.
+
+## Eliminar bolsas vacias
+
+Aplicar `086_cometa_delete_empty_bags.sql` despues de `085_cometa_archive_empty_bags.sql`.
+Las tarjetas de bolsas con saldo cero y la lista de archivadas incluyen **Eliminar**.
+La eliminacion quita la bolsa de las listas activas, archivadas y destinos de Cosecha y
+traslados, conservando su numero e historial. Los numeros no se reutilizan.
+Supabase comprueba todas las partidas bajo el bloqueo de movimientos y rechaza eliminar
+una bolsa con stock, un silo fijo o un registro de otra organizacion. Las pestañas antiguas
+tampoco pueden cargar mercaderia en una bolsa eliminada. Si se anula una salida anterior
+y se restauran existencias, la bolsa vuelve a mostrarse para que el stock quede visible.
 
 ## Bolsas archivadas automaticamente
 

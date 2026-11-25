@@ -3,6 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import test from 'node:test';
 import {PGlite} from '@electric-sql/pglite';
+import {harvestYield,yieldLabel} from '../lib/cometa-grain.ts';
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 function fn(source,name){const start=source.indexOf('create or replace function '+name+'(');return source.slice(start,source.indexOf('$$;',source.indexOf('as $$',start))+3)}
 
@@ -37,9 +38,9 @@ test('field hectares snapshot harvest yields, preserve old history and quantitie
   const field=await save('Lote 25',25),unknown=await save('Sin superficie',null);
   const first=await harvest(field),missing=await harvest(unknown);
   data=await report();const snapshot=id=>data.harvests.find(row=>row.id===id).field_hectares;
-  assert.equal(Number(snapshot(first)),25);assert.equal(snapshot(missing),null);assert.equal(100/Number(snapshot(first)),4);
+  assert.equal(Number(snapshot(first)),25);assert.equal(snapshot(missing),null);assert.equal(harvestYield(100,snapshot(first)),40);assert.equal(yieldLabel(100,snapshot(first)),'40 qq/ha');assert.equal(yieldLabel(100,snapshot(missing)),'—');
   await save('Lote 25',40,field);assert.equal(await harvest(field,first),first);
-  const second=await harvest(field);data=await report();assert.equal(Number(snapshot(first)),25);assert.equal(Number(snapshot(second)),40);assert.equal(100/Number(snapshot(second)),2.5);
+  const second=await harvest(field);data=await report();assert.equal(Number(snapshot(first)),25);assert.equal(Number(snapshot(second)),40);assert.equal(harvestYield(100,snapshot(second)),25);assert.equal(yieldLabel(100,snapshot(first)),'40 qq/ha');
   await save('Lote anterior',50,oldField);data=await report();assert.equal(snapshot(oldHarvest),null); // no invented historical acreage
   await save('Lote 25',null,field);const noArea=await harvest(field);data=await report();assert.equal(snapshot(noArea),null);assert.equal(Number(snapshot(first)),25);
   await save('Lote 25',12.5,field);const fractional=await harvest(field);data=await report();assert.equal(Number(snapshot(fractional)),12.5);assert.equal(100/Number(snapshot(fractional)),8);
