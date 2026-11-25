@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
+import {MonthlyPaymentReminder} from "./monthly-payment-reminder";
 import {
   isSupabaseConfigured,
   supabase,
@@ -293,6 +294,11 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
             onClose={() => setShowMembers(false)}
           />
         )}
+        <MonthlyPaymentReminder
+          key={activeMembership.organization_id}
+          organization={activeMembership.organization_id}
+          canWrite={activeMembership.role !== "viewer"}
+        />
         {children}
       </RuntimeErrorBoundary>
     </ActiveMembershipContext.Provider>

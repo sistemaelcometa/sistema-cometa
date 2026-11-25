@@ -2986,6 +2986,16 @@ button:disabled {
 .cometa-store-card h4 { margin: 6px 0 0; }
 .cometa-bag-number { display: inline-block; margin-top: 8px; padding: 4px 8px; border-radius: 6px; background: #e4eff6; color: #245778; font-size: 13px; }
 .cometa-store-option-detail { display: block; margin-top: 6px; font-size: 13px; font-weight: 400; line-height: 1.5; overflow-wrap: anywhere; }
+.monthly-payment-reminder { position: sticky; top: 12px; z-index: 19; display: flex; align-items: center; justify-content: space-between; gap: 20px; width: min(1440px,calc(100% - 32px)); margin: 16px auto; padding: 18px 22px; border: 1px solid #e4c276; border-radius: 12px; background: #fff8e5; }
+.monthly-reminder-copy { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.monthly-reminder-copy > svg { color: #94621a; flex-shrink: 0; }
+.monthly-reminder-copy h3 { margin: 0; font-size: 20px; font-weight: 800; }
+.monthly-reminder-copy p { margin: 5px 0 0; }
+.monthly-reminder-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 700px) {
+  .monthly-payment-reminder { flex-direction: column; align-items: stretch; padding: 18px; }
+  .monthly-reminder-actions { flex-direction: column; }
+}
 .cometa-storage-group { display: grid; gap: 16px; min-width: 0; }
 .cometa-storage-group > .section-title { margin: 0; }
 .cometa-storage-group > .section-title h4 { margin: 0; font-size: 18px; font-weight: 800; }
